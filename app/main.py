@@ -14,7 +14,7 @@ from core.database import get_db, engine, Base
 from models.document import Document, DocumentStatus, TreeNode
 from models.chat import ChatSession
 from models.config import SystemConfig
-from api import document, chat, config
+from api import document, chat, config, auth
 from services.llm_service import llm_service
 
 logger = logging.getLogger(__name__)
@@ -52,6 +52,7 @@ app.add_middleware(
 app.include_router(document.router)
 app.include_router(chat.router)
 app.include_router(config.router)
+app.include_router(auth.router)
 
 
 @app.get("/")

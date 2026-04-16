@@ -106,6 +106,7 @@
             color: white;
             padding: 24px 0;
             position: fixed;
+            z-index: 50;;
             top: 56px;
             left: 0;
             bottom: 0;
@@ -459,6 +460,37 @@
             color: var(--red);
             border-color: var(--red);
         }
+
+        /* Tree Index */
+        .tree-node { margin-bottom: 4px; }
+        .tree-node-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: var(--radius);
+            transition: var(--transition);
+        }
+        .tree-node-row:hover { background: var(--surface-hover); }
+        .tree-node-id { font-size: 11px; color: var(--text-muted); min-width: 60px; }
+        .tree-node-title { font-size: 13px; font-weight: 500; color: var(--text); flex: 1; }
+        .tree-node-range { font-size: 11px; color: var(--text-muted); }
+        .tree-node-summary { font-size: 12px; color: var(--text-muted); margin-top: 4px; padding-left: 68px; }
+        .tree-children { padding-left: 20px; border-left: 1px solid var(--border); margin-left: 14px; }
+
+        /* Status badges */
+        .doc-status {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        .doc-status.status-indexed { background: #dcfce7; color: #166534; }
+        .doc-status.status-processing { background: #fef9c3; color: #854d0e; }
+        .doc-status.status-tree_building { background: #dbeafe; color: #1e40af; }
+        .doc-status.status-failed { background: #fee2e2; color: #991b1b; }
+        .doc-status.status-uploading { background: #f3e8ff; color: #6b21a8; }
 
         /* Upload Panel */
         .upload-panel {
@@ -842,6 +874,9 @@
                 <span class="nav-icon">⚙</span>
                 <span>系统设置</span>
             </div>
+            <div class="nav-footer" style="margin-top:auto;padding:12px 0 4px;border-top:1px solid var(--border)">
+                <button class="btn btn-secondary" style="width:100%;font-size:12px" onclick="logout()">退出登录 🔒</button>
+            </div>
         </nav>
 
         <!-- Content -->
@@ -869,6 +904,14 @@
 
                         <div class="doc-toolbar">
                             <input type="text" class="search-input" id="search-input" placeholder="搜索文档名称..." oninput="handleSearch()">
+                            <select id="status-filter" class="search-input" style="width:120px" onchange="handleStatusFilter()">
+                                <option value="">全部状态</option>
+                                <option value="indexed">已索引</option>
+                                <option value="processing">处理中</option>
+                                <option value="tree_building">构建树</option>
+                                <option value="failed">失败</option>
+                                <option value="uploading">上传中</option>
+                            </select>
                             <button class="btn btn-secondary" onclick="loadDocs()">刷新</button>
                         </div>
 
@@ -880,6 +923,7 @@
                                         <th>名称</th>
                                         <th>格式</th>
                                         <th>大小</th>
+                                        <th>状态</th>
                                         <th>日期</th>
                                         <th>操作</th>
                                     </tr>
@@ -1050,6 +1094,17 @@
     <!-- Toast Container -->
     <div class="toast-container" id="toast-container"></div>
 
+    <!-- Tree Index Modal -->
+    <div class="modal-overlay" id="tree-modal" onclick="if(event.target===this)closeTreeModal()">
+        <div class="modal" style="max-width:700px;max-height:80vh">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                <h3 id="tree-title">文档树结构</h3>
+                <button class="btn btn-secondary" onclick="closeTreeModal()">关闭</button>
+            </div>
+            <div id="tree-view" style="max-height:60vh;overflow-y:auto"></div>
+        </div>
+    </div>
+
     <!-- Add Category Modal -->
     <div class="modal-overlay" id="add-cat-modal">
         <div class="modal">
@@ -1082,14 +1137,53 @@
         let settingsData = {};
         let uploadQueue = [];
         let searchTimeout = null;
+        let authToken = sessionStorage.getItem('admin_token') || null;
+        let statusFilter = '';
+
+        const statusLabels = {
+            indexed: '已索引',
+            processing: '处理中',
+            tree_building: '构建树',
+            failed: '失败',
+            uploading: '上传中'
+        };
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
+            if (!authToken) {
+                window.location.href = '/admin/login.html';
+                return;
+            }
             initNav();
             initDropZone();
             loadDocs();
             loadSettings();
         });
+
+        // Wrap fetch with auth
+        async function authFetch(url, options = {}) {
+            const authHeaders = {};
+            if (authToken) {
+                authHeaders['Authorization'] = 'Bearer ' + authToken;
+            }
+            const res = await fetch(url, {
+                ...options,
+                headers: { ...(options.headers || {}), ...authHeaders }
+            });
+            if (res.status === 401) {
+                authToken = null;
+                sessionStorage.removeItem('admin_token');
+                window.location.href = '/admin/login.html';
+                throw new Error('Unauthorized');
+            }
+            return res;
+        }
+
+        function logout() {
+            authToken = null;
+            sessionStorage.removeItem('admin_token');
+            window.location.href = '/admin/login.html';
+        }
 
         // Navigation
         function initNav() {
@@ -1167,9 +1261,15 @@
             filteredDocs = allDocs.filter(doc => {
                 const matchCat = currentCat === 'all' || (doc.category || '未分类') === currentCat;
                 const matchSearch = !searchQuery || doc.title.toLowerCase().includes(searchQuery.toLowerCase());
-                return matchCat && matchSearch;
+                const matchStatus = !statusFilter || doc.status === statusFilter;
+                return matchCat && matchSearch && matchStatus;
             });
             renderDocList(filteredDocs);
+        }
+
+        function handleStatusFilter() {
+            statusFilter = document.getElementById('status-filter').value;
+            filterDocs();
         }
 
         // Render Document List
@@ -1177,12 +1277,12 @@
             const tbody = document.getElementById('doc-list');
 
             if (items.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">📭</div><h4>暂无文档</h4><p>上传文档后即可在此处管理</p></div></td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">📭</div><h4>暂无文档</h4><p>上传文档后即可在此处管理</p></div></td></tr>';
                 return;
             }
 
             tbody.innerHTML = items.map(doc => {
-                const size = formatSize(doc.size);
+                const size = formatSize(doc.file_size || 0);
                 const date = formatDate(doc.created_at || doc.updated_at);
                 const ext = getExtension(doc.title);
                 const isSelected = selectedIds.has(doc.id);
@@ -1198,16 +1298,24 @@
                     </td>
                     <td><span class="doc-format">${ext.toUpperCase()}</span></td>
                     <td class="doc-size">${size}</td>
+                    <td><span class="doc-status status-${doc.status}">${statusLabels[doc.status] || doc.status}</span></td>
                     <td class="doc-date">${date}</td>
                     <td>
                         <div class="doc-actions">
-                            <button onclick="openDocCatModal(${doc.id}, '${escapeHtml(doc.category || '')}')">分类</button>
-                            <button onclick="renameDoc(${doc.id}, '${escapeHtml(doc.title)}')">重命名</button>
-                            <button class="delete-btn" onclick="deleteDoc(${doc.id})">删除</button>
+                            <button class="action-cat" data-id="${doc.id}" data-cat="${escapeHtml(doc.category || '')}">分类</button>
+                            <button class="action-rename" data-id="${doc.id}" data-title="${escapeHtml(doc.title)}">重命名</button>
+                            <button class="action-tree" data-id="${doc.id}">树索引</button>
+                            <button class="action-delete delete-btn" data-id="${doc.id}">删除</button>
                         </div>
                     </td>
                 </tr>`;
             }).join('');
+
+            // Bind events after render
+            document.querySelectorAll('.action-cat').forEach(btn => btn.addEventListener('click', () => openDocCatModal(btn.dataset.id, btn.dataset.cat)));
+            document.querySelectorAll('.action-rename').forEach(btn => btn.addEventListener('click', () => renameDoc(btn.dataset.id, btn.dataset.title)));
+            document.querySelectorAll('.action-tree').forEach(btn => btn.addEventListener('click', () => openTreeModal(btn.dataset.id)));
+            document.querySelectorAll('.action-delete').forEach(btn => btn.addEventListener('click', function() { deleteDoc(this.dataset.id); }));
 
             syncSelectAll();
         }
@@ -1265,11 +1373,48 @@
             }, 300);
         }
 
+        // Tree Index Modal
+        async function openTreeModal(docId) {
+            try {
+                const res = await fetch(API + '/documents/' + docId + '/tree');
+                if (!res.ok) throw new Error('获取树索引失败');
+                const d = await res.json();
+                document.getElementById('tree-title').textContent = '树索引：' + (d.tree_index.title || '文档');
+                document.getElementById('tree-view').innerHTML = renderTreeNode(d.tree_index, 0);
+                document.getElementById('tree-modal').classList.add('show');
+            } catch (e) {
+                toast('加载树索引失败: ' + e.message, 'error');
+            }
+        }
+
+        function renderTreeNode(node, depth) {
+            if (!node) return '';
+            const children = node.nodes || [];
+            let html = `<div class="tree-node">
+                <div class="tree-node-row">
+                    <span class="tree-node-id">${node.node_id || ''}</span>
+                    <span class="tree-node-title">${escapeHtml(node.title || '未命名')}</span>
+                    <span class="tree-node-range">L${node.start_index || 0}-${node.end_index || 0}</span>
+                </div>
+                ${node.summary ? '<div class="tree-node-summary">' + escapeHtml(node.summary) + '</div>' : ''}
+            </div>`;
+            if (children.length > 0) {
+                html += '<div class="tree-children">';
+                children.forEach(child => { html += renderTreeNode(child, depth + 1); });
+                html += '</div>';
+            }
+            return html;
+        }
+
+        function closeTreeModal() {
+            document.getElementById('tree-modal').classList.remove('show');
+        }
+
         // Delete Document
         async function deleteDoc(id) {
             if (!confirm('确定要删除这个文档吗？')) return;
             try {
-                const response = await fetch(API + `/documents/${id}`, { method: 'DELETE' });
+                const response = await authFetch(API + `/documents/${id}`, { method: 'DELETE' });
                 if (!response.ok) throw new Error('Delete failed');
                 toast('文档已删除', 'success');
                 await loadDocs();
@@ -1283,7 +1428,7 @@
             if (selectedIds.size === 0) return;
             if (!confirm(`确定要删除选中的 ${selectedIds.size} 个文档吗？`)) return;
             try {
-                const response = await fetch(API + '/documents/batch-delete', {
+                const response = await authFetch(API + '/documents/batch-delete', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ ids: Array.from(selectedIds) })
@@ -1306,7 +1451,7 @@
 
         async function putDoc(id, data) {
             try {
-                const response = await fetch(API + `/documents/${id}`, {
+                const response = await authFetch(API + `/documents/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
@@ -1426,10 +1571,11 @@
             if (!newName) return;
             closeAddCatModal();
             try {
-                const form = new FormData();
-                form.append('old_name', oldName);
-                form.append('new_name', newName);
-                const res = await fetch(API + '/documents/categories/rename', { method: 'POST', body: form });
+                const res = await authFetch(API + '/documents/categories/rename', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ old_name: oldName, new_name: newName })
+                });
                 if (!res.ok) {
                     const err = await res.json().catch(() => ({}));
                     toast((err.detail || '重命名分类失败'), 'error');
@@ -1513,7 +1659,7 @@
             formData.append('file', file);
 
             try {
-                const response = await fetch(API + '/documents/upload', {
+                const response = await authFetch(API + '/documents/upload', {
                     method: 'POST',
                     body: formData
                 });
@@ -1581,7 +1727,7 @@
             if (!isNaN(mc)) config.max_tree_context_chars = mc;
 
             try {
-                const response = await fetch(API + '/config', {
+                const response = await authFetch(API + '/config', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(config)

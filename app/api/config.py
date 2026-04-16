@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from core.config import settings
 from core.database import get_db
+from core.security import verify_token
 from models.config import SystemConfig
 from schemas.config import ConfigUpdate, ConfigResponse
 
@@ -48,7 +49,7 @@ def get_config(db: Session = Depends(get_db)) -> ConfigResponse:
 
 
 @router.put("", response_model=ConfigResponse)
-def update_config(cfg: ConfigUpdate, db: Session = Depends(get_db)) -> ConfigResponse:
+def update_config(cfg: ConfigUpdate, db: Session = Depends(get_db), _auth: bool = Depends(verify_token)) -> ConfigResponse:
     """Upsert config values. Only non-None fields are updated."""
     for key, value in cfg.model_dump(exclude_unset=True).items():
         if key not in CONFIG_KEYS:

@@ -9,8 +9,9 @@ from sqlalchemy.orm import Session
 
 from core.config import settings
 from core.database import get_db
+from core.security import verify_token
 from models.document import Document, DocumentStatus, TreeNode
-from schemas.document import DocumentResponse, DocumentDetail, DocumentList, TreeIndexResponse, BatchDeleteRequest, BatchReprocessRequest
+from schemas.document import DocumentResponse, DocumentDetail, DocumentList, TreeIndexResponse, BatchDeleteRequest, BatchReprocessRequest, CategoryRenameRequest, DocumentUpdateRequest
 from services.ingestion import run_ingestion_task
 from services.storage import storage_service
 
@@ -116,23 +117,21 @@ async def list_documents(
 @router.put("/{document_id}")
 async def update_document(
     document_id: uuid.UUID,
-    title: Optional[str] = Form(None),
-    category: Optional[str] = Form(None),
-    tags: Optional[str] = Form(None),
-    clear_category: Optional[str] = Form(None),
+    req: DocumentUpdateRequest,
     db: Session = Depends(get_db),
+    _auth: bool = Depends(verify_token),
 ):
     doc = db.query(Document).filter(Document.id == document_id).first()
     if not doc:
         raise HTTPException(404, "Document not found")
-    if title is not None:
-        doc.title = title
-    if clear_category == "true":
+    if req.title is not None:
+        doc.title = req.title
+    if req.clear_category:
         doc.category = None
-    elif category is not None:
-        doc.category = category
-    if tags is not None:
-        doc.tags = [t.strip() for t in tags.split(",")] if tags else []
+    elif req.category is not None:
+        doc.category = req.category
+    if req.tags is not None:
+        doc.tags = [t.strip() for t in req.tags.split(",")] if req.tags else []
     db.commit()
     return {"message": "Document updated", "document_id": str(document_id)}
 
@@ -166,6 +165,7 @@ async def reprocess_document(
     document_id: uuid.UUID,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
+    _auth: bool = Depends(verify_token),
 ):
     doc = db.query(Document).filter(Document.id == document_id).first()
     if not doc:
@@ -182,7 +182,7 @@ async def reprocess_document(
 
 
 @router.delete("/{document_id}")
-async def delete_document(document_id: uuid.UUID, db: Session = Depends(get_db)):
+async def delete_document(document_id: uuid.UUID, db: Session = Depends(get_db), _auth: bool = Depends(verify_token)):
     doc = db.query(Document).filter(Document.id == document_id).first()
     if not doc:
         raise HTTPException(404, "Document not found")
@@ -199,7 +199,7 @@ async def delete_document(document_id: uuid.UUID, db: Session = Depends(get_db))
 
 
 @router.post("/batch-delete")
-async def batch_delete_documents(req: BatchDeleteRequest, db: Session = Depends(get_db)):
+async def batch_delete_documents(req: BatchDeleteRequest, db: Session = Depends(get_db), _auth: bool = Depends(verify_token)):
     deleted = 0
     for doc_id in req.ids:
         doc = db.query(Document).filter(Document.id == doc_id).first()
@@ -218,6 +218,7 @@ async def batch_reprocess_documents(
     req: BatchReprocessRequest,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
+    _auth: bool = Depends(verify_token),
 ):
     triggered = 0
     for doc_id in req.ids:
@@ -231,11 +232,15 @@ async def batch_reprocess_documents(
 
 
 @router.post("/categories/rename")
-def rename_category(old_name: str = Form(...), new_name: str = Form(...), db: Session = Depends(get_db)):
+def rename_category(req: CategoryRenameRequest, db: Session = Depends(get_db), _auth: bool = Depends(verify_token)):
     """
     Rename a category: update all documents with old_name category to new_name.
-    If old_name does not exist as a category, return 404.
+    If old_name is empty, creates a new category (no rename).
     """
+    old_name = req.old_name or ""
+    new_name = req.new_name
+    if not new_name:
+        raise HTTPException(status_code=400, detail="new_name is required")
     docs = db.query(Document).filter(Document.category == old_name).all()
     if not docs and old_name != "":
         raise HTTPException(status_code=404, detail="Category not found")

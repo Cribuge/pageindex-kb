@@ -115,6 +115,20 @@
             font-weight: 500;
             font-variant-numeric: tabular-nums;
         }
+        .header-admin-btn {
+            font-size: 13px;
+            color: var(--text-muted);
+            text-decoration: none;
+            padding: 6px 14px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            transition: var(--transition);
+        }
+        .header-admin-btn:hover {
+            color: var(--accent);
+            border-color: var(--accent);
+            background: rgba(37,99,235,0.05);
+        }
 
         /* ===== MAIN LAYOUT ===== */
         .main {
@@ -1404,6 +1418,7 @@
                 <span>树节点 <span class="stat-val" id="stat-nodes">-</span></span>
             </div>
         </div>
+        <a href="/admin/" class="header-admin-btn">⚙ 管理</a>
     </div>
 
     <div class="main">

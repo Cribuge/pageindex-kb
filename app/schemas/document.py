@@ -67,3 +67,15 @@ class BatchDeleteRequest(BaseModel):
 
 class BatchReprocessRequest(BaseModel):
     ids: List[uuid.UUID]
+
+
+class DocumentUpdateRequest(BaseModel):
+    title: Optional[str] = None
+    category: Optional[str] = None
+    tags: Optional[str] = None
+    clear_category: bool = False
+
+
+class CategoryRenameRequest(BaseModel):
+    old_name: str = ""
+    new_name: str

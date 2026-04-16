@@ -8,8 +8,9 @@
 - **无向量架构**：不使用任何向量数据库，依赖关键词匹配 + 树结构 + LLM 重排
 - **流式对话**：支持 SSE 流式输出，实时显示 LLM 回复
 - **多格式支持**：PDF、Word(.doc/.docx)、Excel(.xls/.xlsx)、TXT、Markdown
-- **双界面分离**：主界面（/）仅保留智能对话和文档查看，管理功能（/admin/）独立管理界面
-- **文档管理**：分类增删改、批量操作（删除/重建索引）、重命名、查看树索引
+- **双界面分离**：主界面（/）仅保留智能对话，管理界面（/admin/）管理文档和系统设置
+- **管理认证**：管理界面需登录，默认密码 `admin123`
+- **文档管理**：分类增删改、批量操作（删除/重建索引）、重命名、查看树索引、状态筛选
 - **系统设置**：LLM 模型、温度、检索参数、树索引参数均可通过界面调整并持久化
 
 ## 系统架构
@@ -17,8 +18,9 @@
 ```
 ┌─────────────────────────────────────────────────────┐
 │  Web (Nginx) — 静态页面，端口 3001                   │
-│    /         → 智能对话 + 文档查看                   │
-│    /admin/   → 文档管理 + 上传 + 系统设置            │
+│    /           → 智能对话 + 文档查看                │
+│    /admin/     → 文档管理 + 上传 + 系统设置        │
+│    /admin/login.html → 管理登录                     │
 ├─────────────────────────────────────────────────────┤
 │  API (FastAPI) — 文档上传、搜索问答、配置管理，端口 8001 │
 ├─────────────────────────────────────────────────────┤
@@ -51,6 +53,7 @@ docker --context desktop-linux compose up -d
 | 服务 | 地址 |
 |------|------|
 | 主界面（对话） | http://localhost:3001 |
+| 管理登录 | http://localhost:3001/admin/login.html |
 | 管理界面 | http://localhost:3001/admin/ |
 | API 文档 | http://localhost:8001/docs |
 | Ollama | http://localhost:11434 |
@@ -72,19 +75,24 @@ docker --context desktop-linux compose stop
 2. 结合检索上下文生成回答
 3. 流式输出结果
 
-可点击检索结果中的链接跳转查看原文档内容。
+### 2. 管理登录
 
-### 2. 文档管理（管理界面）
+访问 http://localhost:3001/admin/ 时会自动跳转到登录页。输入密码（默认 `admin123`，可通过环境变量 `ADMIN_PASSWORD` 修改）登录。
 
-访问 http://localhost:3001/admin/，左侧导航点击 **文档管理**：
+> 主界面右上角也有"⚙ 管理"按钮可跳转登录页。
+
+### 3. 文档管理（管理界面）
+
+左侧导航点击 **文档管理**：
 
 - **分类侧边栏**：显示各分类文档数量，点击筛选该分类
 - **添加分类**：点击分类标题旁的 `+`，可新建分类或重命名已有分类
+- **状态筛选**：工具栏状态下拉框，可按 已索引/处理中/构建树/失败/上传中 筛选
 - **批量操作**：勾选多个文档后，可批量删除、批量重建索引、批量设置分类
-- **单文档操作**：分类（文件夹图标）、重命名（铅笔图标）、删除（垃圾桶图标）
-- **查看树索引**：点击图表图标，可视化查看该文档的树结构
+- **单文档操作**：分类、重命名、查看树索引、删除
+- **查看树索引**：点击弹出模态框，展示该文档的完整树结构
 
-### 3. 上传文档
+### 4. 上传文档
 
 左侧导航点击 **上传文档**，拖拽或选择文件。支持 PDF、Word、Excel、TXT、Markdown，单文件最大 100MB。
 
@@ -93,7 +101,7 @@ docker --context desktop-linux compose stop
 2. 构建 PageIndex 层级树
 3. 存储树节点到数据库
 
-### 4. 系统设置
+### 5. 系统设置
 
 左侧导航点击 **系统设置**，三组配置：
 
@@ -109,45 +117,48 @@ docker --context desktop-linux compose stop
 knowledge-base-pageindex/
 ├── app/
 │   ├── api/
+│   │   ├── auth.py          # 认证 API（POST /auth/login）
 │   │   ├── chat.py          # 对话 API（/chat/stream 流式问答）
-│   │   ├── config.py        # 系统配置 API（GET/PUT /config）
+│   │   ├── config.py         # 系统配置 API（GET/PUT /config）
 │   │   └── document.py      # 文档管理 API（上传/删除/更新/分类/树索引）
 │   ├── core/
-│   │   ├── config.py        # Pydantic Settings（所有配置项）
-│   │   └── database.py      # SQLAlchemy Session 管理
+│   │   ├── config.py         # Pydantic Settings（所有配置项）
+│   │   ├── database.py       # SQLAlchemy Session 管理
+│   │   └── security.py       # JWT 认证工具（create_token/verify_token）
 │   ├── models/
-│   │   ├── chat.py          # ChatHistory 模型
-│   │   ├── config.py        # SystemConfig 键值对模型
-│   │   └── document.py      # Document、TreeNode 模型
+│   │   ├── chat.py           # ChatHistory 模型
+│   │   ├── config.py         # SystemConfig 键值对模型
+│   │   └── document.py       # Document、TreeNode 模型
 │   ├── schemas/
-│   │   ├── chat.py          # ChatRequest/Response
-│   │   ├── config.py        # ConfigUpdate/ConfigResponse
-│   │   └── document.py      # DocumentResponse、TreeIndexResponse
+│   │   ├── chat.py           # ChatRequest/Response
+│   │   ├── config.py         # ConfigUpdate/ConfigResponse
+│   │   └── document.py       # DocumentResponse、TreeIndexResponse、DocumentUpdateRequest
 │   ├── services/
 │   │   ├── document_processor.py  # 文本提取（PDF/Word/Excel/TXT）
-│   │   ├── ingestion.py     # 后台上传处理流程
-│   │   ├── llm_service.py   # Ollama LLM 调用封装
-│   │   ├── rag_service.py   # RAG 问答核心逻辑
-│   │   ├── storage.py       # 文件存储服务
-│   │   ├── tree_builder.py  # PageIndex 树构建（LLM 生成结构）
-│   │   └── tree_search.py   # 树搜索（关键词 + LLM 选择分支）
-│   ├── main.py              # FastAPI 应用入口
+│   │   ├── ingestion.py      # 后台上传处理流程
+│   │   ├── llm_service.py    # Ollama LLM 调用封装
+│   │   ├── rag_service.py    # RAG 问答核心逻辑
+│   │   ├── storage.py        # 文件存储服务
+│   │   ├── tree_builder.py   # PageIndex 树构建（LLM 生成结构）
+│   │   └── tree_search.py    # 树搜索（关键词 + LLM 选择分支）
+│   ├── main.py                # FastAPI 应用入口
 │   └── requirements.txt
 ├── web/
-│   ├── index.html           # 主界面（智能对话 + 文档查看）
-│   ├── admin.html            # 管理界面（文档管理 + 上传 + 设置）
-│   └── nginx.conf           # Nginx 配置（反向代理 + 上传限制）
+│   ├── index.html              # 主界面（智能对话）
+│   ├── admin.html             # 管理界面（文档管理 + 上传 + 设置）
+│   ├── login.html             # 管理登录页
+│   └── nginx.conf            # Nginx 配置（反向代理 + 上传限制）
 ├── scripts/
-│   ├── init_db.py           # 数据库初始化
-│   └── ingest.py            # 批量导入脚本
-├── docker-compose.yml       # 容器编排配置
-├── 启动知识库.bat            # Windows 启动菜单脚本
+│   ├── init_db.py            # 数据库初始化
+│   └── ingest.py             # 批量导入脚本
+├── docker-compose.yml         # 容器编排配置
+├── 启动知识库.bat             # Windows 启动菜单脚本
 └── README.md
 ```
 
 ## 配置说明
 
-### 环境变量（`app/core/config.py`）
+### 环境变量
 
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
@@ -159,6 +170,8 @@ knowledge-base-pageindex/
 | `TREE_MAX_CHILDREN` | `10` | 每个节点最大子节点数 |
 | `SEARCH_MAX_DEPTH` | `4` | 搜索时最大遍历深度 |
 | `SEARCH_TOP_K` | `5` | 返回结果数量 |
+| `ADMIN_PASSWORD` | `admin123` | 管理界面登录密码 |
+| `SECRET_KEY` | `pageindex-jwt-secret-change-in-production` | JWT 签名密钥 |
 
 ### 更换 LLM 模型
 
@@ -175,6 +188,7 @@ knowledge-base-pageindex/
 | `title` | String | 文档标题 |
 | `file_path` | String | 存储路径 |
 | `file_type` | String | 文件格式 |
+| `file_size` | Integer | 文件大小（字节） |
 | `category` | String | 分类（可为 null） |
 | `status` | Enum | uploading/processing/tree_building/indexed/failed |
 | `tree_index` | JSON | PageIndex 树结构 |
@@ -204,33 +218,39 @@ knowledge-base-pageindex/
 
 ## API 端点
 
+### 认证
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `POST` | `/auth/login` | 管理员登录，返回 JWT token |
+
 ### 文档管理
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| `POST` | `/documents/upload` | 上传单个文档 |
-| `POST` | `/documents/batch-upload` | 批量上传（最多20个） |
-| `GET` | `/documents/` | 列出文档（支持 category/status/search 过滤） |
-| `GET` | `/documents/{id}` | 获取文档详情 |
-| `PUT` | `/documents/{id}` | 更新文档（标题/分类/标签） |
-| `DELETE` | `/documents/{id}` | 删除文档 |
-| `POST` | `/documents/batch-delete` | 批量删除 |
-| `POST` | `/documents/batch-reprocess` | 批量重建索引 |
-| `POST` | `/documents/categories/rename` | 重命名分类（old_name → new_name） |
-| `GET` | `/documents/{id}/tree` | 获取文档树索引 |
+| `POST` | `/documents/upload` | 上传单个文档（需认证） |
+| `POST` | `/documents/batch-upload` | 批量上传（需认证） |
+| `GET` | `/documents/` | 列出文档（支持 category/status/search 过滤，不需认证） |
+| `GET` | `/documents/{id}` | 获取文档详情（不需认证） |
+| `PUT` | `/documents/{id}` | 更新文档（标题/分类/标签，需认证） |
+| `DELETE` | `/documents/{id}` | 删除文档（需认证） |
+| `POST` | `/documents/batch-delete` | 批量删除（需认证） |
+| `POST` | `/documents/batch-reprocess` | 批量重建索引（需认证） |
+| `POST` | `/documents/categories/rename` | 重命名/新建分类（需认证） |
+| `GET` | `/documents/{id}/tree` | 获取文档树索引（不需认证） |
 
 ### 对话
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| `POST` | `/chat/stream` | 流式对话（SSE） |
+| `POST` | `/chat/stream` | 流式对话（SSE，不需认证） |
 
 ### 系统配置
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| `GET` | `/config` | 获取所有配置项 |
-| `PUT` | `/config` | 更新配置项（部分更新，仅修改非 null 字段） |
+| `GET` | `/config` | 获取所有配置项（不需认证） |
+| `PUT` | `/config` | 更新配置项（需认证） |
 
 ## 常见问题
 
@@ -240,14 +260,14 @@ A: 检查是否为 413（文件过大，超过 100MB）或 400（不支持的文
 **Q: 对话返回"暂无相关文档"？**
 A: 确认文档状态为 `indexed`（已索引）。失败状态可进入管理界面手动重新处理。
 
+**Q: 管理界面无法访问？**
+A: 访问 http://localhost:3001/admin/ 会自动跳转到登录页。默认密码 `admin123`。
+
+**Q: 文档操作按钮无反应？**
+A: 确认已登录（右上角无"退出登录"按钮表示未登录）。清理浏览器 sessionStorage 后重新登录。
+
 **Q: 如何更换为其他 LLM 模型？**
 A: 在管理界面系统设置中选择模型并保存，或修改 `docker-compose.yml` 中 `LLM_MODEL` 值后重启 API。
-
-**Q: 文档处理很慢？**
-A: 树索引构建依赖 LLM 推理速度。qwen2.5:7b 在 CPU 上处理一页 PDF 约需 1-2 秒。
-
-**Q: 管理界面无法加载（加载文档失败/加载设置失败）？**
-A: 确保通过 http://localhost:3001/admin/ 访问（不是 http://localhost:8001/admin/），且 API 服务正常运行。
 
 ## License
 
