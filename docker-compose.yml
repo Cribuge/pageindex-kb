@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: pi_ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: pi_postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=pageindex_kb
+      - POSTGRES_USER=kb_user
+      - POSTGRES_PASSWORD=kb_password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kb_user -d pageindex_kb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    container_name: pi_api
+    ports:
+      - "8001:8000"
+    environment:
+      - APP_NAME=PageIndex Knowledge Base
+      - DATABASE_URL=postgresql://kb_user:kb_password@postgres:5432/pageindex_kb
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - LLM_MODEL=qwen2.5:7b
+      - UPLOAD_DIR=/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+    volumes:
+      - uploads_data:/app/uploads
+
+  web:
+    image: nginx:alpine
+    container_name: pi_web
+    ports:
+      - "3001:80"
+    volumes:
+      - ./web/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./web/index.html:/usr/share/nginx/html/index.html:ro
+    depends_on:
+      - api
+
+volumes:
+  ollama_data:
+  postgres_data:
+  uploads_data:

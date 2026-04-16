@@ -1,0 +1,2669 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PageIndex 知识库</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-deep: #eef2f8;
+            --bg: #0d2a5f;
+            --surface: #fafbfc;
+            --surface-hover: #e8f2ff;
+            --surface-active: #d4e8ff;
+            --border: #c2d9f8;
+            --border-subtle: #dce9fb;
+            --text: #1a2a3a;
+            --text-secondary: #4a6a8a;
+            --text-muted: #8aabb8;
+            --accent: #1a5fc8;
+            --accent-dim: rgba(26, 95, 200, 0.1);
+            --accent-glow: rgba(26, 95, 200, 0.2);
+            --green: #16a34a;
+            --green-dim: rgba(22, 163, 74, 0.1);
+            --red: #dc2626;
+            --red-dim: rgba(220, 38, 38, 0.1);
+            --amber: #d97706;
+            --amber-dim: rgba(217, 119, 6, 0.1);
+            --radius: 8px;
+            --radius-lg: 12px;
+            --shadow-sm: 0 1px 3px rgba(26,95,200,0.08);
+            --shadow-md: 0 4px 12px rgba(26,95,200,0.12);
+            --shadow-lg: 0 8px 24px rgba(26,95,200,0.16);
+            --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        html, body { height: 100%; overflow: hidden; }
+
+        body {
+            font-family: 'Noto Sans SC', -apple-system, sans-serif;
+            background: var(--bg-deep);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            background: #ffffff;
+            border-bottom: 1px solid var(--border);
+            padding: 0 28px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            z-index: 10;
+            box-shadow: 0 1px 3px rgba(26,95,200,0.06);
+        }
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+            color: var(--text);
+        }
+        .logo-mark {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--accent), #3b82f6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            color: white;
+            box-shadow: 0 2px 8px rgba(26,95,200,0.3);
+        }
+        .header-stats {
+            display: flex;
+            gap: 24px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .header-stats .stat {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .header-stats .stat-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 6px var(--green);
+        }
+        .header-stats .stat-val {
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* ===== MAIN LAYOUT ===== */
+        .main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            width: 200px;
+            background: var(--bg);
+            border-right: 1px solid rgba(255,255,255,0.15);
+            display: flex;
+            flex-direction: column;
+            padding: 16px 10px;
+            gap: 2px;
+        }
+        .sidebar-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: rgba(255,255,255,0.45);
+            padding: 12px 14px 6px;
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 400;
+            color: rgba(255,255,255,0.7);
+            transition: all var(--transition);
+            position: relative;
+            user-select: none;
+        }
+        .nav-item:hover {
+            background: rgba(255,255,255,0.12);
+            color: #ffffff;
+        }
+        .nav-item.active {
+            background: rgba(255,255,255,0.2);
+            color: #ffffff;
+            font-weight: 500;
+        }
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 18px;
+            border-radius: 0 3px 3px 0;
+            background: #ffffff;
+        }
+        .nav-icon {
+            width: 18px;
+            height: 18px;
+            opacity: 0.7;
+            flex-shrink: 0;
+        }
+        .nav-item.active .nav-icon,
+        .nav-item:hover .nav-icon { opacity: 1; }
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 14px;
+            font-size: 11px;
+            color: rgba(255,255,255,0.4);
+            text-align: center;
+        }
+        .sidebar-footer a {
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            transition: opacity var(--transition);
+        }
+        .sidebar-footer a:hover { opacity: 1; }
+
+        /* ===== SETTINGS PANEL ===== */
+        .settings-header {
+            padding: 20px 28px 8px;
+        }
+        .settings-header h2 {
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: -0.2px;
+            margin-bottom: 4px;
+        }
+        .settings-header p {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .settings-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 28px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .settings-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+        }
+        .settings-card h3 {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 16px;
+        }
+        .settings-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+            gap: 16px;
+        }
+        .settings-row:last-child { margin-bottom: 0; }
+        .settings-row label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+        }
+        .settings-input {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 7px 12px;
+            color: var(--text);
+            font-size: 13px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color var(--transition);
+            flex: 1;
+            max-width: 320px;
+        }
+        .settings-input:focus { border-color: var(--accent); }
+        .settings-input.small { max-width: 120px; }
+        .settings-input[type="range"] {
+            -webkit-appearance: none;
+            background: var(--border);
+            height: 4px;
+            border-radius: 2px;
+            padding: 0;
+            border: none;
+            cursor: pointer;
+        }
+        .settings-input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+        }
+        .range-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            max-width: 320px;
+        }
+        .range-row input[type="range"] { flex: 1; }
+        textarea.settings-input {
+            resize: vertical;
+            min-height: 80px;
+            line-height: 1.5;
+        }
+        .settings-hint {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-subtle);
+        }
+        .settings-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Category management */
+        .cat-batch-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 14px;
+            margin-bottom: 16px;
+        }
+        .cat-batch-section h3 {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 10px;
+        }
+        .cat-batch-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .cat-batch-row select {
+            flex: 1;
+        }
+        .cat-new-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            align-items: center;
+        }
+        .cat-new-row input {
+            flex: 1;
+        }
+        .cat-list-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 10px;
+        }
+        .cat-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+        .cat-item-name { color: var(--text); }
+        .cat-item-count { font-size: 12px; color: var(--text-muted); margin-left: 8px; }
+        .cat-item-actions { display: flex; gap: 4px; }
+        .cat-item-actions .btn { padding: 4px 8px; font-size: 11px; }
+        .cat-doc-count {
+            font-size: 12px;
+            color: var(--text-muted);
+            border-left: 1px solid var(--border);
+            padding-left: 12px;
+            margin-left: 4px;
+        }
+
+        /* Category cards */
+        .cat-cards-wrap {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 28px 20px;
+        }
+        .cat-cards-wrap::-webkit-scrollbar { width: 6px; }
+        .cat-cards-wrap::-webkit-scrollbar-track { background: transparent; }
+        .cat-cards-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        .cat-cards {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-content: flex-start;
+        }
+        .cat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 0;
+            cursor: pointer;
+            transition: all var(--transition);
+            width: 220px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+        .cat-card::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 3px;
+            background: var(--card-accent, var(--accent));
+            border-radius: 3px 0 0 3px;
+        }
+        .cat-card-body {
+            padding: 16px 16px 12px 19px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .cat-card-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--card-accent, var(--accent-dim));
+            margin-bottom: 2px;
+        }
+        .cat-card-icon svg {
+            width: 18px;
+            height: 18px;
+            color: var(--card-accent, var(--accent));
+        }
+        .cat-card-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.3;
+        }
+        .cat-card-count {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .cat-card-types {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            margin-top: 2px;
+        }
+        .cat-type-badge {
+            font-size: 10px;
+            padding: 1px 6px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+        .cat-type-badge.pdf { background: rgba(239,68,68,0.12); color: #ef4444; }
+        .cat-type-badge.xlsx { background: rgba(74,222,128,0.12); color: #4ade80; }
+        .cat-type-badge.doc { background: rgba(109,159,255,0.12); color: #6d9fff; }
+        .cat-type-badge.txt { background: rgba(251,191,36,0.12); color: #fbbf24; }
+        .cat-card:hover {
+            border-color: var(--card-accent, var(--accent));
+            background: var(--surface-hover);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+        .cat-all-card {
+            border-style: dashed;
+        }
+        .cat-all-card::before { background: var(--green); }
+        /* ===== CONTENT ===== */
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--bg-deep);
+        }
+        .panel {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            overflow: hidden;
+            width: 100%;
+            align-self: stretch;
+        }
+        .panel.active { display: flex; }
+
+        /* ===== CHAT PANEL ===== */
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 32px;
+            scroll-behavior: smooth;
+        }
+        .chat-container::-webkit-scrollbar { width: 6px; }
+        .chat-container::-webkit-scrollbar-track { background: transparent; }
+        .chat-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+        .chat-welcome {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 80px 20px;
+            text-align: center;
+        }
+        .chat-welcome-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, var(--accent-dim), rgba(167,139,250,0.08));
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .chat-welcome-icon svg { width: 28px; height: 28px; color: var(--accent); }
+        .chat-welcome h2 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: -0.3px;
+        }
+        .chat-welcome p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            max-width: 400px;
+            line-height: 1.6;
+        }
+        .chat-hints {
+            display: flex;
+            gap: 8px;
+            margin-top: 24px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .chat-hint {
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            font-size: 12px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+        .chat-hint:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-dim);
+        }
+
+        .msg {
+            margin-bottom: 20px;
+            max-width: 780px;
+            animation: msgIn 0.3s ease-out;
+        }
+        @keyframes msgIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .msg.user { margin-left: auto; }
+        .msg-role {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .msg.user .msg-role { justify-content: flex-end; color: var(--accent); }
+        .msg.assistant .msg-role { color: var(--text-muted); }
+        .msg-role-avatar {
+            width: 22px;
+            height: 22px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+        }
+        .msg.user .msg-role-avatar {
+            background: rgba(26,95,200,0.15);
+            color: var(--accent);
+        }
+        .msg.assistant .msg-role-avatar {
+            background: rgba(26,95,200,0.08);
+            color: var(--accent);
+        }
+        .msg-bubble {
+            padding: 14px 18px;
+            border-radius: var(--radius-lg);
+            font-size: 14px;
+            line-height: 1.75;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .msg.user .msg-bubble {
+            background: linear-gradient(135deg, var(--accent), #2563eb);
+            color: #ffffff;
+            border-bottom-right-radius: 4px;
+            box-shadow: var(--shadow-sm);
+        }
+        .msg.assistant .msg-bubble {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-bottom-left-radius: 4px;
+            color: var(--text);
+        }
+        .msg-sources {
+            margin-top: 10px;
+            padding: 10px 14px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 12px;
+        }
+        .msg-sources-title {
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            letter-spacing: 0.3px;
+        }
+        .msg-sources a {
+            color: var(--accent);
+            text-decoration: none;
+            transition: color var(--transition);
+        }
+        .msg-sources a:hover { color: var(--accent); opacity: 0.8; }
+        .source-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            background: var(--accent-dim);
+            border-radius: 4px;
+            margin: 2px 4px 2px 0;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+        .source-tag:hover {
+            background: var(--accent-glow);
+        }
+
+        .chat-input-wrapper {
+            padding: 16px 32px 20px;
+            background: var(--bg-deep);
+        }
+        .chat-input-box {
+            position: relative;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            transition: border-color var(--transition), box-shadow var(--transition);
+            overflow: hidden;
+        }
+        .chat-input-box:focus-within {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-dim), var(--shadow-md);
+        }
+        .chat-input-box textarea {
+            width: 100%;
+            background: transparent;
+            border: none;
+            padding: 14px 100px 14px 18px;
+            color: var(--text);
+            font-size: 14px;
+            font-family: inherit;
+            line-height: 1.5;
+            resize: none;
+            outline: none;
+            min-height: 48px;
+            max-height: 160px;
+        }
+        .chat-input-box textarea::placeholder { color: var(--text-muted); }
+        .chat-send-btn {
+            position: absolute;
+            right: 10px;
+            bottom: 10px;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            border: none;
+            background: var(--accent);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition);
+            box-shadow: 0 2px 8px rgba(109,159,255,0.3);
+        }
+        .chat-send-btn:hover { background: #1447b0; transform: scale(1.05); }
+        .chat-send-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .chat-send-btn svg { width: 16px; height: 16px; }
+        .chat-input-hint {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 4px 0;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 2px;
+            height: 16px;
+            background: var(--accent);
+            animation: blink 0.8s step-end infinite;
+            vertical-align: text-bottom;
+            margin-left: 1px;
+            border-radius: 1px;
+        }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+        .thinking-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+            font-size: 13px;
+            padding: 4px 0;
+        }
+        .thinking-dots span {
+            display: inline-block;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: dotPulse 1.4s infinite;
+            opacity: 0.3;
+        }
+        .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes dotPulse {
+            0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+            40% { opacity: 1; transform: scale(1); }
+        }
+
+        /* ===== DOCS PANEL ===== */
+        .docs-header {
+            padding: 20px 28px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .docs-header h2 {
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: -0.2px;
+        }
+        .docs-toolbar {
+            padding: 0 28px 16px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .search-box {
+            flex: 1;
+            max-width: 320px;
+            position: relative;
+        }
+        .search-box svg {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 14px;
+            height: 14px;
+            color: var(--text-muted);
+        }
+        .search-box input {
+            width: 100%;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 8px 12px 8px 36px;
+            color: var(--text);
+            font-size: 13px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color var(--transition);
+        }
+        .search-box input:focus { border-color: var(--accent); }
+        .search-box input::placeholder { color: var(--text-muted); }
+
+        .filter-select {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 8px 12px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-family: inherit;
+            outline: none;
+            cursor: pointer;
+            transition: border-color var(--transition);
+        }
+        .filter-select:focus { border-color: var(--accent); }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-family: inherit;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition);
+            white-space: nowrap;
+        }
+        .btn:hover { background: var(--surface-hover); color: var(--text); border-color: var(--text-muted); }
+        .btn-accent {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            box-shadow: 0 2px 8px rgba(26,95,200,0.25);
+        }
+        .btn-accent:hover { background: #1447b0; }
+        .btn-accent:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-danger {
+            background: var(--red-dim);
+            border-color: transparent;
+            color: var(--red);
+        }
+        .btn-danger:hover { background: rgba(248,113,113,0.18); }
+        .btn svg { width: 14px; height: 14px; }
+
+        .docs-list {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 0 28px 20px;
+            min-height: 200px;
+            width: 100%;
+        }
+        .docs-list::-webkit-scrollbar { width: 6px; height: 6px; }
+        .docs-list::-webkit-scrollbar-track { background: transparent; }
+        .docs-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+        /* Batch bar visible when docs are shown */
+        .batch-bar-wrap {
+            padding: 0 28px 12px;
+            display: none;
+        }
+        .batch-bar-wrap.visible { display: flex; align-items: center; gap: 10px; }
+        .batch-bar {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            background: var(--accent-dim);
+            border: 1px solid var(--accent);
+            border-radius: var(--radius);
+            font-size: 13px;
+            color: var(--accent);
+            animation: slideDown 0.2s ease-out;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideUp {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-6px); }
+        }
+
+        /* Table-style document list - CSS Grid 布局，绕过表格渲染问题 */
+        .doc-grid {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .doc-grid-header {
+            display: grid;
+            grid-template-columns: 48px minmax(0, 1fr) 80px 80px 100px 160px;
+            align-items: center;
+        }
+        .doc-grid-header > div {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-muted);
+            padding: 10px 12px;
+            border-bottom: 2px solid var(--border);
+            background: var(--surface);
+        }
+        .doc-grid-row {
+            display: grid;
+            grid-template-columns: 48px minmax(0, 1fr) 80px 80px 100px 160px;
+            align-items: center;
+            border-bottom: 1px solid var(--border-subtle);
+            position: relative;
+            transition: background var(--transition);
+        }
+        .doc-grid-row::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 3px;
+            background: transparent;
+            transition: background var(--transition);
+        }
+        .doc-grid-row:hover { background: var(--surface-hover); }
+        .doc-grid-row:hover::before { background: var(--accent); opacity: 0.4; }
+        .doc-grid-row.selected { background: var(--accent-dim); }
+        .doc-grid-row.selected::before { background: var(--accent); opacity: 1; }
+        .doc-grid-row > div {
+            padding: 10px 12px;
+            font-size: 13px;
+            color: var(--text);
+            overflow: hidden;
+        }
+        .doc-grid-header > div:first-child,
+        .doc-grid-row > div:first-child {
+            padding-left: 16px;
+        }
+        .doc-grid-check { text-align: center; }
+        .doc-grid-title {
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .doc-grid-title h3 {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin: 0;
+        }
+        .doc-status-dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+        .doc-status-dot.indexed { background: var(--green); }
+        .doc-status-dot.processing { background: var(--accent); animation: pulse 1.5s infinite; }
+        .doc-status-dot.failed { background: var(--red); }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+        .doc-grid-type { font-size: 11px; }
+        .doc-grid-size { font-size: 12px; color: var(--text-muted); }
+        .doc-grid-date { font-size: 12px; color: var(--text-muted); }
+        .doc-grid-actions { display: flex; align-items: center; gap: 4px; }
+        .doc-grid-actions .btn { padding: 5px 8px; font-size: 12px; }
+        .doc-type-icon { display: inline-flex; align-items: center; gap: 5px; }
+            font-weight: 500;
+            font-size: 11px;
+        }
+        .doc-type-icon svg { width: 13px; height: 13px; }
+
+        /* Compact card style (fallback) */
+        .doc-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 16px 20px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all var(--transition);
+            animation: cardIn 0.3s ease-out;
+        }
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .doc-card:hover {
+            border-color: var(--accent);
+            background: var(--surface-hover);
+            box-shadow: var(--shadow-sm);
+        }
+        .doc-card-left { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
+        .doc-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: var(--accent-dim);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .doc-icon svg { width: 18px; height: 18px; color: var(--accent); }
+        .doc-icon.type-pdf { background: var(--red-dim); }
+        .doc-icon.type-pdf svg { color: var(--red); }
+        .doc-icon.type-xlsx { background: var(--green-dim); }
+        .doc-icon.type-xlsx svg { color: var(--green); }
+        .doc-info { min-width: 0; flex: 1; }
+        .doc-info h3 {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .doc-meta {
+            display: flex;
+            gap: 12px;
+            font-size: 12px;
+            color: var(--text-muted);
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        .badge::before {
+            content: '';
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+        }
+        .badge-indexed { background: var(--green-dim); color: var(--green); }
+        .badge-indexed::before { background: var(--green); }
+        .badge-processing { background: var(--amber-dim); color: var(--amber); }
+        .badge-processing::before { background: var(--amber); }
+        .badge-building { background: var(--accent-dim); color: var(--accent); }
+        .badge-building::before { background: var(--accent); }
+        .badge-failed { background: var(--red-dim); color: var(--red); }
+        .badge-failed::before { background: var(--red); }
+
+        .doc-actions {
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+            margin-left: 16px;
+        }
+
+        /* Batch selection */
+        .doc-card.selected {
+            border-color: var(--accent);
+            background: var(--accent-dim);
+        }
+        .doc-checkbox {
+            width: 18px;
+            height: 18px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: var(--surface);
+            cursor: pointer;
+            display: inline-block;
+            vertical-align: middle;
+            transition: all var(--transition);
+        }
+        .doc-checkbox.checked {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+        .doc-checkbox.checked::after {
+            content: '✓';
+            color: white;
+            font-size: 12px;
+            font-weight: 700;
+            display: block;
+            text-align: center;
+            line-height: 16px;
+        }
+        .doc-card.selected > .doc-card-left > .doc-checkbox,
+        .doc-checkbox.checked {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+        .doc-checkbox.checked::after {
+            content: '✓';
+            color: white;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .batch-bar {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            background: var(--accent-dim);
+            border: 1px solid var(--accent);
+            border-radius: var(--radius);
+            font-size: 13px;
+            color: var(--accent);
+            animation: slideDown 0.2s ease-out;
+        }
+        .batch-bar.visible { display: flex; }
+        .batch-bar-count { font-weight: 600; }
+        .batch-bar .btn { padding: 6px 12px; font-size: 12px; }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--text-muted);
+        }
+        .empty-state-icon {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 16px;
+            border-radius: 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .empty-state-icon svg { width: 24px; height: 24px; color: var(--text-muted); }
+        .empty-state h3 { font-size: 14px; font-weight: 500; margin-bottom: 6px; color: var(--text-secondary); }
+        .empty-state p { font-size: 13px; }
+
+        /* ===== UPLOAD PANEL ===== */
+        .upload-header {
+            padding: 20px 28px 0;
+        }
+        .upload-header h2 {
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: -0.2px;
+            margin-bottom: 4px;
+        }
+        .upload-header p {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .upload-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 32px 28px;
+        }
+        .upload-drop {
+            width: 100%;
+            max-width: 560px;
+            border: 2px dashed var(--border);
+            border-radius: var(--radius-lg);
+            padding: 56px 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        .upload-drop::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, var(--accent-dim), transparent);
+            opacity: 0;
+            transition: opacity var(--transition);
+        }
+        .upload-drop:hover, .upload-drop.dragover {
+            border-color: var(--accent);
+            background: var(--surface);
+        }
+        .upload-drop:hover::before, .upload-drop.dragover::before { opacity: 1; }
+        .upload-drop-inner { position: relative; z-index: 1; }
+        .upload-drop-icon {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 16px;
+            border-radius: 16px;
+            background: var(--accent-dim);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition);
+        }
+        .upload-drop:hover .upload-drop-icon {
+            background: var(--accent-glow);
+            border-color: var(--accent);
+            transform: scale(1.05);
+        }
+        .upload-drop-icon svg { width: 24px; height: 24px; color: var(--accent); }
+        .upload-drop h3 {
+            font-size: 15px;
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+        .upload-drop p {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .upload-formats {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            margin-top: 14px;
+        }
+        .upload-format-tag {
+            padding: 3px 10px;
+            border-radius: 6px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .upload-queue {
+            width: 100%;
+            max-width: 560px;
+            margin-top: 20px;
+        }
+        .upload-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin-bottom: 6px;
+            font-size: 13px;
+            animation: cardIn 0.3s ease-out;
+        }
+        .upload-item-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+        .upload-item-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            background: var(--accent-dim);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .upload-item-icon svg { width: 14px; height: 14px; color: var(--accent); }
+        .upload-item-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .upload-status {
+            font-size: 12px;
+            font-weight: 500;
+            flex-shrink: 0;
+            margin-left: 12px;
+        }
+
+        /* ===== TREE MODAL ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s;
+        }
+        .modal-overlay.show { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .modal-content {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 640px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-lg);
+            animation: modalIn 0.25s ease-out;
+        }
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .modal-header {
+            padding: 20px 24px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .modal-header h2 {
+            font-size: 15px;
+            font-weight: 600;
+        }
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text-secondary);
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition);
+        }
+        .modal-close:hover { background: var(--surface-hover); color: var(--text); }
+        .modal-body {
+            padding: 16px 24px 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .modal-body::-webkit-scrollbar { width: 6px; }
+        .modal-body::-webkit-scrollbar-track { background: transparent; }
+        .modal-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+        .tree-node {
+            padding: 6px 0;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .tree-node-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: background var(--transition);
+        }
+        .tree-node-row:hover { background: var(--surface); }
+        .tree-node-id {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--text-muted);
+            background: var(--surface);
+            padding: 1px 6px;
+            border-radius: 4px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .tree-node-title {
+            color: var(--text);
+            font-weight: 500;
+        }
+        .tree-node-range {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-left: auto;
+            flex-shrink: 0;
+            margin-top: 3px;
+        }
+        .tree-node-summary {
+            font-size: 12px;
+            color: var(--text-secondary);
+            padding: 2px 0 0 32px;
+            line-height: 1.5;
+        }
+        .tree-children { padding-left: 20px; border-left: 1px solid var(--border-subtle); margin-left: 14px; }
+
+        /* ===== TOAST ===== */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .toast {
+            padding: 12px 18px;
+            border-radius: var(--radius);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-size: 13px;
+            box-shadow: var(--shadow-md);
+            animation: toastIn 0.3s ease-out;
+            max-width: 320px;
+        }
+        .toast.error { border-color: var(--red); color: var(--red); }
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="logo">
+            <div class="logo-mark">PI</div>
+            <span>PageIndex 知识库</span>
+        </div>
+        <div class="header-stats">
+            <div class="stat">
+                <span class="stat-dot"></span>
+                <span>文档 <span class="stat-val" id="stat-docs">-</span></span>
+            </div>
+            <div class="stat">
+                <span>树节点 <span class="stat-val" id="stat-nodes">-</span></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="main">
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <div class="sidebar-label">功能</div>
+            <div class="nav-item active" data-panel="chat">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                智能对话
+            </div>
+            <div class="nav-item" data-panel="documents">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                文档管理
+            </div>
+            <div class="nav-item" data-panel="upload">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                上传文档
+            </div>
+            <div class="nav-item" data-panel="settings">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                系统设置
+            </div>
+            <div class="sidebar-footer">
+                基于 <a href="#">PageIndex</a> 构建
+            </div>
+        </div>
+
+        <!-- CONTENT -->
+        <div class="content">
+            <!-- CHAT -->
+            <div class="panel active" id="panel-chat">
+                <div class="chat-container" id="chat-messages">
+                    <div class="chat-welcome" id="chat-welcome">
+                        <div class="chat-welcome-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                        </div>
+                        <h2>开始提问</h2>
+                        <p>基于 PageIndex 层级树索引，精准定位文档内容，无需向量数据库即可实现智能检索。</p>
+                        <div class="chat-hints">
+                            <div class="chat-hint" onclick="askHint(this)">这些文档的核心内容是什么？</div>
+                            <div class="chat-hint" onclick="askHint(this)">帮我总结最近上传的文档</div>
+                            <div class="chat-hint" onclick="askHint(this)">文档中有哪些关键数据？</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-input-wrapper">
+                    <div class="chat-input-box">
+                        <textarea id="chat-input" rows="1" placeholder="输入问题，按 Enter 发送…" oninput="autoResize(this)"></textarea>
+                        <button class="chat-send-btn" id="chat-send" onclick="sendChat()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                        </button>
+                    </div>
+                    <div class="chat-input-hint">
+                        <span>Enter 发送 · Shift+Enter 换行</span>
+                        <span id="chat-status"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DOCUMENTS -->
+            <div class="panel" id="panel-documents">
+                <div class="docs-header">
+                    <h2 id="docs-title">文档管理</h2>
+                    <button class="btn" onclick="loadDocuments()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                        刷新
+                    </button>
+                </div>
+                <!-- Category level toolbar -->
+                <div class="docs-toolbar" id="cat-toolbar">
+                    <button class="btn btn-accent" onclick="openCatModal()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                        分类管理
+                    </button>
+                    <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+                        <div class="search-box" style="max-width:260px">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            <input type="text" id="doc-search-all" placeholder="搜索文档..." oninput="searchAllDocs()">
+                        </div>
+                        <select class="filter-select" id="doc-status-filter" onchange="searchAllDocs()">
+                            <option value="">全部状态</option>
+                            <option value="indexed">已索引</option>
+                            <option value="processing">处理中</option>
+                            <option value="tree_building">构建树</option>
+                            <option value="failed">失败</option>
+                        </select>
+                    </div>
+                </div>
+                <!-- Category cards container -->
+                <div class="cat-cards-wrap" id="cat-cards-wrap">
+                    <div class="cat-cards" id="cat-cards"></div>
+                </div>
+                <!-- Document list toolbar (shown when inside a category) -->
+                <div class="docs-toolbar" id="doc-toolbar" style="display:none">
+                    <button class="btn" onclick="backToCats()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                        返回分类
+                    </button>
+                    <h2 id="cat-name-title" style="font-size:15px;font-weight:500;color:var(--text-secondary);margin:0 8px"></h2>
+                    <div class="search-box" style="flex:1;max-width:260px">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input type="text" id="doc-search" placeholder="搜索此分类文档..." oninput="loadDocuments()">
+                    </div>
+                    <label class="btn" style="cursor:pointer">
+                        <input type="checkbox" id="select-all-docs" onchange="toggleSelectAll()" style="display:none">
+                        全选
+                    </label>
+                </div>
+                <div class="batch-bar-wrap" id="batch-bar-wrap" style="display:none">
+                    <div class="batch-bar" id="batch-bar">
+                        <span class="batch-bar-count" id="batch-count">0</span> 份文档已选择
+                        <select id="batch-cat-select" class="filter-select" style="font-size:12px;padding:5px 8px">
+                            <option value="">设为分类...</option>
+                        </select>
+                        <button class="btn btn-accent" id="batch-cat-btn" onclick="batchSetCatBar()" style="padding:5px 10px;font-size:12px">应用</button>
+                        <button class="btn btn-danger" onclick="batchDelete()">批量删除</button>
+                        <button class="btn" onclick="batchReprocess()">批量重建索引</button>
+                        <button class="btn" onclick="clearSelection()">取消选择</button>
+                    </div>
+                </div>
+                <div class="docs-list" id="docs-list"></div>
+            </div>
+
+            <!-- UPLOAD -->
+            <div class="panel" id="panel-upload">
+                <div class="upload-header">
+                    <h2>上传文档</h2>
+                    <p>上传后系统将自动解析文档结构，生成层级树索引</p>
+                </div>
+                <div class="upload-area">
+                    <div class="upload-drop" id="upload-drop" onclick="document.getElementById('file-input').click()">
+                        <div class="upload-drop-inner">
+                            <div class="upload-drop-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                            </div>
+                            <h3>拖拽文件到此处，或点击选择</h3>
+                            <p>支持批量上传，单次最多 20 个文件</p>
+                            <div class="upload-formats">
+                                <span class="upload-format-tag">PDF</span>
+                                <span class="upload-format-tag">DOCX</span>
+                                <span class="upload-format-tag">TXT</span>
+                                <span class="upload-format-tag">MD</span>
+                                <span class="upload-format-tag">XLSX</span>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="file" id="file-input" multiple hidden accept=".pdf,.docx,.doc,.txt,.md,.xlsx,.xls" onchange="handleFiles(this.files)">
+                    <div class="upload-queue" id="upload-queue"></div>
+                </div>
+            </div>
+
+            <!-- SETTINGS -->
+            <div class="panel" id="panel-settings">
+                <div class="settings-header">
+                    <h2>系统设置</h2>
+                    <p>配置模型参数与检索策略，修改后仅对新处理的文档生效</p>
+                </div>
+                <div class="settings-body">
+                    <div class="settings-card">
+                        <h3>模型配置</h3>
+                        <div class="settings-row">
+                            <label>LLM 模型</label>
+                            <select id="cfg-llm_model" class="settings-input">
+                                <option value="qwen2.5:7b">qwen2.5:7b</option>
+                            </select>
+                        </div>
+                        <div class="settings-row">
+                            <label>温度 (Temperature)</label>
+                            <div class="range-row">
+                                <input type="range" id="cfg-temperature-range" min="0" max="2" step="0.05" value="0.7" oninput="syncTemp(this.value)">
+                                <input type="number" id="cfg-temperature" class="settings-input small" min="0" max="2" step="0.05" value="0.7">
+                            </div>
+                        </div>
+                        <div class="settings-row">
+                            <label>最大生成长度</label>
+                            <input type="number" id="cfg-max_tokens" class="settings-input small" min="256" max="8192" step="256" value="2048">
+                        </div>
+                        <div class="settings-row" style="align-items:flex-start">
+                            <label>系统提示词</label>
+                            <textarea id="cfg-system_prompt" class="settings-input" rows="4" placeholder="留空使用默认提示词"></textarea>
+                        </div>
+                    </div>
+                    <div class="settings-card">
+                        <h3>检索配置</h3>
+                        <div class="settings-row">
+                            <label>TOP_K (返回结果数)</label>
+                            <input type="number" id="cfg-search_top_k" class="settings-input small" min="1" max="20" value="5">
+                        </div>
+                        <div class="settings-row">
+                            <label>搜索深度</label>
+                            <input type="number" id="cfg-search_max_depth" class="settings-input small" min="1" max="10" value="4">
+                        </div>
+                    </div>
+                    <div class="settings-card">
+                        <h3>树索引配置</h3>
+                        <div class="settings-row">
+                            <label>树最大深度</label>
+                            <input type="number" id="cfg-tree_max_depth" class="settings-input small" min="1" max="10" value="5">
+                        </div>
+                        <div class="settings-row">
+                            <label>最大子节点数</label>
+                            <input type="number" id="cfg-tree_max_children" class="settings-input small" min="1" max="20" value="10">
+                        </div>
+                        <div class="settings-row">
+                            <label>上下文字符阈值</label>
+                            <input type="number" id="cfg-max_tree_context_chars" class="settings-input small" min="5000" max="50000" step="1000" value="20000">
+                        </div>
+                        <div class="settings-hint">参数变更仅影响新上传或重新处理的文档</div>
+                    </div>
+                    <div class="settings-actions">
+                        <button class="btn btn-accent" onclick="saveSettings()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                            保存设置
+                        </button>
+                        <button class="btn" onclick="loadSettings()">重置</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TREE MODAL -->
+    <div class="modal-overlay" id="tree-modal" onclick="if(event.target===this)closeTreeModal()">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="tree-title">文档树结构</h2>
+                <button class="modal-close" onclick="closeTreeModal()">✕</button>
+            </div>
+            <div class="modal-body" id="tree-view"></div>
+        </div>
+    </div>
+
+    <!-- CATEGORY MODAL -->
+    <div class="modal-overlay" id="cat-modal" onclick="if(event.target===this)closeCatModal()">
+        <div class="modal-content" style="max-width:480px">
+            <div class="modal-header">
+                <h2>分类管理</h2>
+                <button class="modal-close" onclick="closeCatModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <!-- 批量设置分类 -->
+                <div class="cat-batch-section">
+                    <h3>批量设置分类</h3>
+                    <div class="cat-batch-row">
+                        <select id="cat-batch-select" class="settings-input" style="max-width:none">
+                            <option value="">-- 选择已有分类 --</option>
+                        </select>
+                        <button class="btn btn-accent" onclick="batchSetCat()">设为选中文档分类</button>
+                    </div>
+                    <div class="cat-new-row">
+                        <input type="text" id="cat-new-name" class="settings-input" placeholder="输入新分类名称（可选）" style="max-width:none">
+                        <button class="btn" onclick="addCategory()">创建并应用</button>
+                    </div>
+                </div>
+                <!-- 分类列表 -->
+                <h3 class="cat-list-title">已有分类</h3>
+                <div id="cat-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SINGLE DOC CAT MODAL -->
+    <div class="modal-overlay" id="doccat-modal" onclick="if(event.target===this)closeDocCatModal()">
+        <div class="modal-content" style="max-width:380px">
+            <div class="modal-header">
+                <h2>设置分类</h2>
+                <button class="modal-close" onclick="closeDocCatModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="cat-batch-row">
+                    <select id="doccat-select" class="settings-input" style="max-width:none">
+                        <option value="">-- 清除分类 --</option>
+                    </select>
+                </div>
+                <div class="cat-new-row" style="margin-top:10px">
+                    <input type="text" id="doccat-new" class="settings-input" placeholder="或输入新分类名称" style="max-width:none">
+                </div>
+                <div style="margin-top:14px;display:flex;gap:8px">
+                    <button class="btn btn-accent" onclick="confirmDocCat()" style="flex:1">确认</button>
+                    <button class="btn" onclick="closeDocCatModal()">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast-container" id="toast-container"></div>
+
+<script>
+const API = '/api';
+let currentSessionId = null;
+let isStreaming = false;
+
+// SVG icons reused in JS
+const icons = {
+    file: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
+    upload: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
+    check: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+};
+
+const statusLabels = {
+    indexed: '已索引', processing: '处理中',
+    tree_building: '构建树中', failed: '失败', uploading: '上传中'
+};
+
+// Toast
+function toast(msg, type = '') {
+    const el = document.createElement('div');
+    el.className = 'toast ' + type;
+    el.textContent = msg;
+    document.getElementById('toast-container').appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+}
+
+// Navigation
+document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        item.classList.add('active');
+        document.getElementById('panel-' + item.dataset.panel).classList.add('active');
+        if (item.dataset.panel === 'documents') loadCatView();
+        if (item.dataset.panel === 'settings') loadSettings();
+    });
+});
+
+// Auto-resize textarea
+function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+}
+
+// Stats
+async function loadStats() {
+    try {
+        const r = await fetch(API + '/stats');
+        const d = await r.json();
+        document.getElementById('stat-docs').textContent = d.indexed_documents + ' / ' + d.total_documents;
+        document.getElementById('stat-nodes').textContent = d.total_tree_nodes;
+    } catch(e) {}
+}
+loadStats();
+setInterval(loadStats, 10000);
+
+// Chat
+function askHint(el) {
+    document.getElementById('chat-input').value = el.textContent;
+    document.getElementById('chat-input').focus();
+    sendChat();
+}
+
+async function sendChat() {
+    const input = document.getElementById('chat-input');
+    const query = input.value.trim();
+    if (!query || isStreaming) return;
+
+    // Hide welcome
+    const welcome = document.getElementById('chat-welcome');
+    if (welcome) welcome.remove();
+
+    input.value = '';
+    input.style.height = 'auto';
+    isStreaming = true;
+    document.getElementById('chat-send').disabled = true;
+    document.getElementById('chat-status').textContent = '思考中…';
+
+    const messages = document.getElementById('chat-messages');
+    appendMsg(messages, 'user', query);
+    const assistantDiv = appendMsg(messages, 'assistant', '');
+    const bubble = assistantDiv.querySelector('.msg-bubble');
+
+    // Show thinking indicator
+    const thinking = document.createElement('div');
+    thinking.className = 'thinking-indicator';
+    thinking.innerHTML = '<div class="thinking-dots"><span></span><span></span><span></span></div> 正在检索文档并生成回答…';
+    bubble.appendChild(thinking);
+
+    try {
+        const resp = await fetch(API + '/chat/stream', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query, session_id: currentSessionId }),
+        });
+
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let fullAnswer = '';
+        let sources = [];
+        let hasToken = false;
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop();
+            for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
+                try {
+                    const evt = JSON.parse(line.slice(6));
+                    if (evt.type === 'token') {
+                        if (!hasToken) {
+                            thinking.remove();
+                            hasToken = true;
+                        }
+                        fullAnswer += evt.data;
+                        bubble.textContent = fullAnswer;
+                    } else if (evt.type === 'sources') {
+                        sources = evt.data;
+                    } else if (evt.type === 'status' && evt.data.stage === 'generating' && !hasToken) {
+                        thinking.innerHTML = '<div class="thinking-dots"><span></span><span></span><span></span></div> 正在生成回答…';
+                    } else if (evt.type === 'done') {
+                        if (evt.data.session_id) currentSessionId = evt.data.session_id;
+                    }
+                } catch(e) {}
+            }
+        }
+
+        if (thinking.parentNode) thinking.remove();
+        bubble.textContent = fullAnswer;
+
+        if (sources.length > 0) {
+            const srcDiv = document.createElement('div');
+            srcDiv.className = 'msg-sources';
+            srcDiv.innerHTML = `<div class="msg-sources-title">引用来源</div>` +
+                sources.map(s =>
+                    `<span class="source-tag" onclick="viewTree('${s.document_id}')">${escapeHtml(s.document_title)} › ${escapeHtml(s.title)}</span>`
+                ).join(' ');
+            assistantDiv.appendChild(srcDiv);
+        }
+        messages.scrollTop = messages.scrollHeight;
+        document.getElementById('chat-status').textContent = '';
+    } catch(e) {
+        thinking.remove();
+        bubble.textContent = '请求失败：' + e.message;
+        document.getElementById('chat-status').textContent = '';
+    }
+
+    isStreaming = false;
+    document.getElementById('chat-send').disabled = false;
+}
+
+function appendMsg(container, role, text) {
+    const roleLabel = role === 'user' ? '你' : '知识库';
+    const avatar = role === 'user' ? '你' : 'PI';
+    const div = document.createElement('div');
+    div.className = 'msg ' + role;
+    div.innerHTML = `
+        <div class="msg-role">
+            ${role === 'assistant' ? `<span class="msg-role-avatar">${avatar}</span> ${roleLabel}` : ''}
+            ${role === 'user' ? `${roleLabel} <span class="msg-role-avatar">${avatar}</span>` : ''}
+        </div>
+        <div class="msg-bubble">${escapeHtml(text)}</div>
+    `;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+    return div;
+}
+
+function escapeHtml(t) {
+    const d = document.createElement('div');
+    d.textContent = t;
+    return d.innerHTML;
+}
+
+document.getElementById('chat-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+});
+
+// Documents
+let currentCatView = null; // null = category view, string = category name
+
+async function loadCatView() {
+    // Switch to category view
+    currentCatView = null;
+    document.getElementById('cat-toolbar').style.display = 'flex';
+    document.getElementById('cat-cards-wrap').style.display = 'block';
+    document.getElementById('doc-toolbar').style.display = 'none';
+    document.getElementById('batch-bar-wrap').style.display = 'none';
+    document.getElementById('docs-list').innerHTML = '';
+    document.getElementById('docs-list').style.display = 'none';
+    selectedDocIds.clear();
+    updateBatchBar();
+
+    try {
+        const r = await fetch(API + '/documents/?limit=200');
+        const d = await r.json();
+
+        // Count by category + type
+        const catCount = {};
+        const catTypes = {};
+        let totalDocs = d.items.length;
+        let noneCount = 0;
+        let totalTypes = { pdf: 0, xlsx: 0, doc: 0, txt: 0, other: 0 };
+        d.items.forEach(doc => {
+            const ft = (doc.file_type || '').toLowerCase();
+            let typeKey = 'other';
+            if (ft === 'pdf') typeKey = 'pdf';
+            else if (ft === 'xlsx' || ft === 'xls') typeKey = 'xlsx';
+            else if (ft === 'doc' || ft === 'docx') typeKey = 'doc';
+            else if (ft === 'txt') typeKey = 'txt';
+            if (doc.category) {
+                if (!catCount[doc.category]) { catCount[doc.category] = 0; catTypes[doc.category] = { pdf: 0, xlsx: 0, doc: 0, txt: 0, other: 0 }; }
+                catCount[doc.category]++;
+                catTypes[doc.category][typeKey]++;
+            } else {
+                noneCount++;
+                totalTypes[typeKey]++;
+            }
+        });
+        if (noneCount > 0) {
+            catCount['未分类'] = noneCount;
+            catTypes['未分类'] = { ...totalTypes };
+        }
+
+        // Accent colors pool
+        const accentColors = ['#6d9fff', '#4ade80', '#f472b6', '#fb923c', '#a78bfa', '#34d399', '#f87171', '#38bdf8', '#facc15'];
+        function nameToAccent(name) {
+            let hash = 0;
+            for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+            return accentColors[Math.abs(hash) % accentColors.length];
+        }
+
+        function typeBadges(types) {
+            return Object.entries(types)
+                .filter(([, n]) => n > 0)
+                .map(([t, n]) => `<span class="cat-type-badge ${t}">${t.toUpperCase()} ${n}</span>`)
+                .join('');
+        }
+
+        // Build category cards
+        const cards = Object.entries(catCount)
+            .sort((a, b) => b[1] - a[1])
+            .map(([name, count]) => {
+                const accent = nameToAccent(name);
+                const badges = typeBadges(catTypes[name] || {});
+                return `<div class="cat-card" style="--card-accent:${accent}" onclick="enterCat('${escapeHtml(name)}')">
+                    <div class="cat-card-body">
+                        <div class="cat-card-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                        </div>
+                        <div class="cat-card-name">${escapeHtml(name)}</div>
+                        <div class="cat-card-count">${count} 份文档</div>
+                        ${badges ? `<div class="cat-card-types">${badges}</div>` : ''}
+                    </div>
+                </div>`;
+            }).join('');
+
+        const allCard = totalDocs > 0 ? `
+            <div class="cat-card cat-all-card" onclick="enterCat(null)">
+                <div class="cat-card-body">
+                    <div class="cat-card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--green)"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    </div>
+                    <div class="cat-card-name">全部文档</div>
+                    <div class="cat-card-count">${totalDocs} 份文档</div>
+                </div>
+            </div>` : '';
+
+        document.getElementById('cat-cards').innerHTML = allCard + cards;
+
+        // Update status filter and batch category options
+        const statusFilter = document.getElementById('doc-status-filter');
+        const statusVal = statusFilter.value;
+        statusFilter.innerHTML =
+            '<option value="">全部状态</option>' +
+            '<option value="indexed"' + (statusVal === 'indexed' ? ' selected' : '') + '>已索引</option>' +
+            '<option value="processing"' + (statusVal === 'processing' ? ' selected' : '') + '>处理中</option>' +
+            '<option value="failed"' + (statusVal === 'failed' ? ' selected' : '') + '>失败</option>';
+
+        // Update batch category select
+        const opts = Object.keys(catCount).sort().map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+        document.getElementById('batch-cat-select').innerHTML = '<option value="">设为分类...</option>' + opts;
+
+    } catch(e) {
+        document.getElementById('cat-cards').innerHTML = '<div class="empty-state"><h3>加载失败</h3></div>';
+    }
+}
+
+function enterCat(catName) {
+    currentCatView = catName;
+    document.getElementById('cat-toolbar').style.display = 'none';
+    document.getElementById('cat-cards-wrap').style.display = 'none';
+    document.getElementById('doc-toolbar').style.display = 'flex';
+    document.getElementById('batch-bar-wrap').style.display = 'block';
+    document.getElementById('docs-list').style.display = 'flex';
+    document.getElementById('cat-name-title').textContent = catName === null ? '全部文档' : catName;
+    document.getElementById('doc-search').value = '';
+    // For '未分类', currentCatView holds the display name but loadDocuments
+    // should filter for null category (handled there)
+    loadDocuments();
+}
+
+function backToCats() {
+    loadCatView();
+}
+
+async function searchAllDocs() {
+    // In category view, filter across all categories
+    const search = document.getElementById('doc-search-all').value;
+    const status = document.getElementById('doc-status-filter').value;
+    const params = new URLSearchParams();
+    if (search) params.set('search', search);
+    if (status) params.set('status', status);
+
+    try {
+        const r = await fetch(API + '/documents/?' + params + '&limit=200');
+        const d = await r.json();
+        const container = document.getElementById('docs-list');
+        document.getElementById('cat-cards-wrap').style.display = 'none';
+        document.getElementById('doc-toolbar').style.display = 'flex';
+        document.getElementById('batch-bar-wrap').style.display = 'block';
+        document.getElementById('docs-list').style.display = 'flex';
+        document.getElementById('cat-name-title').textContent = search ? '搜索结果' : '全部文档';
+        currentCatView = null; // mark as all docs mode
+
+        if (d.items.length === 0) {
+            container.innerHTML = `<div class="empty-state"><h3>未找到文档</h3><p>请尝试其他关键词</p></div>`;
+            return;
+        }
+        renderDocList(d.items);
+    } catch(e) {
+        document.getElementById('docs-list').innerHTML = '<div class="empty-state"><h3>加载失败</h3></div>';
+    }
+}
+
+async function loadDocuments() {
+    if (currentCatView === undefined) return;
+
+    const search = document.getElementById('doc-search') ? document.getElementById('doc-search').value : '';
+    const status = document.getElementById('doc-status-filter').value;
+    const params = new URLSearchParams();
+    if (search) params.set('search', search);
+    if (status) params.set('status', status);
+
+    // For '未分类' (uncategorized), filter on frontend since API stores null
+    const isUncat = currentCatView === '未分类';
+    if (currentCatView !== null && !isUncat) {
+        params.set('category', currentCatView);
+    }
+
+    try {
+        const r = await fetch(API + '/documents/?' + params + '&limit=200');
+        const d = await r.json();
+        // Filter for uncategorized docs on frontend if in '未分类' view
+        const items = isUncat ? d.items.filter(doc => !doc.category) : d.items;
+        const container = document.getElementById('docs-list');
+
+        if (items.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    </div>
+                    <h3>暂无文档</h3>
+                    <p>${search ? '未找到匹配的文档' : '前往"上传文档"添加你的第一份文档'}</p>
+                </div>`;
+            return;
+        }
+        renderDocList(items);
+    } catch(e) {
+        document.getElementById('docs-list').innerHTML = '<div class="empty-state"><h3>加载失败</h3><p>无法连接到服务器</p></div>';
+    }
+}
+
+function renderDocList(items) {
+    const container = document.getElementById('docs-list');
+    let html = '<div class="doc-grid">';
+    // Header
+    html += '<div class="doc-grid-header">';
+    html += '<div class="doc-grid-check"><input type="checkbox" id="select-all-table" onchange="toggleSelectAll()" style="cursor:pointer"></div>';
+    html += '<div>文档名称</div>';
+    html += '<div class="doc-grid-type">格式</div>';
+    html += '<div class="doc-grid-size">大小</div>';
+    html += '<div class="doc-grid-date">上传日期</div>';
+    html += '<div class="doc-grid-actions">操作</div>';
+    html += '</div>';
+    // Rows
+    items.forEach(doc => {
+        const statusDot = doc.status || 'indexed';
+        const typeIcon = doc.file_type === 'pdf' ? '<span class="doc-type-icon" style="color:#ef4444">' + icons.file + ' PDF</span>' :
+            (doc.file_type === 'xlsx' || doc.file_type === 'xls') ? '<span class="doc-type-icon" style="color:#4ade80">' + icons.file + ' XLSX</span>' :
+            (doc.file_type === 'docx' || doc.file_type === 'doc') ? '<span class="doc-type-icon" style="color:#6d9fff">' + icons.file + ' DOC</span>' :
+            '<span class="doc-type-icon">' + icons.file + ' ' + (doc.file_type || '-').toUpperCase() + '</span>';
+        const size = doc.file_size > 1048576 ? (doc.file_size/1048576).toFixed(1)+' MB' : (doc.file_size/1024).toFixed(0)+' KB';
+        const sel = selectedDocIds.has(doc.id);
+        html += '<div class="doc-grid-row' + (sel ? ' selected' : '') + '" data-id="' + doc.id + '" onclick="toggleDocSelect(\'' + doc.id + '\', event)">';
+        html += '<div class="doc-grid-check"><div class="doc-checkbox' + (sel ? ' checked' : '') + '" onclick="event.stopPropagation(); toggleDocSelect(\'' + doc.id + '\')"></div></div>';
+        html += '<div class="doc-grid-title"><h3 title="' + escapeHtml(doc.title) + '"><span class="doc-status-dot ' + statusDot + '"></span>' + escapeHtml(doc.title) + '</h3></div>';
+        html += '<div class="doc-grid-type">' + typeIcon + '</div>';
+        html += '<div class="doc-grid-size">' + size + '</div>';
+        html += '<div class="doc-grid-date">' + new Date(doc.created_at).toLocaleDateString('zh-CN') + '</div>';
+        html += '<div class="doc-grid-actions" onclick="event.stopPropagation()">';
+        html += '<button class="btn" onclick="openDocCatModal(\'' + doc.id + '\', \'' + escapeHtml(doc.category || '') + '\')" title="设置分类"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></button>';
+        html += '<button class="btn" onclick="renameDoc(\'' + doc.id + '\', \'' + escapeHtml(doc.title.replace(/'/g, "\\'")) + '\')" title="重命名"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>';
+        if (doc.status === 'indexed') {
+            html += '<button class="btn" onclick="viewTree(\'' + doc.id + '\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></button>';
+        }
+        html += '<button class="btn btn-danger" onclick="deleteDoc(\'' + doc.id + '\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>';
+        html += '</div></div>';
+    });
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+async function deleteDoc(id) {
+    if (!confirm('确定要删除这份文档吗？此操作不可撤销。')) return;
+    await fetch(API + '/documents/' + id, { method: 'DELETE' });
+    toast('文档已删除');
+    if (currentCatView !== null) {
+        loadDocuments();
+    } else {
+        loadCatView();
+    }
+    loadStats();
+}
+
+async function renameDoc(id, currentName) {
+    const newName = prompt('请输入文档新名称：', currentName);
+    if (!newName || newName === currentName) return;
+    try {
+        const formData = new FormData();
+        formData.append('title', newName);
+        await fetch(API + '/documents/' + id, { method: 'PUT', body: formData });
+        toast('文档已重命名');
+        loadDocuments();
+    } catch(e) {
+        toast('重命名失败', 'error');
+    }
+}
+
+async function viewTree(docId) {
+    try {
+        const r = await fetch(API + '/documents/' + docId + '/tree');
+        const d = await r.json();
+        document.getElementById('tree-title').textContent = '树索引：' + (d.tree_index.title || '文档');
+        document.getElementById('tree-view').innerHTML = renderTreeNode(d.tree_index, 0);
+        document.getElementById('tree-modal').classList.add('show');
+    } catch(e) {
+        toast('加载树结构失败', 'error');
+    }
+}
+
+function renderTreeNode(node, depth) {
+    let childrenHtml = '';
+    const children = node.nodes || [];
+    if (children.length) {
+        childrenHtml = '<div class="tree-children">' +
+            children.map(c => renderTreeNode(c, depth + 1)).join('') +
+            '</div>';
+    }
+    return `<div class="tree-node">
+        <div class="tree-node-row">
+            <span class="tree-node-id">${node.node_id}</span>
+            <span class="tree-node-title">${escapeHtml(node.title || '未命名')}</span>
+            <span class="tree-node-range">L${node.start_index}-${node.end_index}</span>
+        </div>
+        ${node.summary ? '<div class="tree-node-summary">' + escapeHtml(node.summary) + '</div>' : ''}
+        ${childrenHtml}
+    </div>`;
+}
+
+function closeTreeModal() {
+    document.getElementById('tree-modal').classList.remove('show');
+}
+
+// Batch selection
+let selectedDocIds = new Set();
+
+function toggleDocSelect(id, event) {
+    if (selectedDocIds.has(id)) {
+        selectedDocIds.delete(id);
+    } else {
+        selectedDocIds.add(id);
+    }
+    updateBatchBar();
+    renderDocSelection();
+}
+
+function renderDocSelection() {
+    // Handle card-style rows
+    document.querySelectorAll('.doc-card').forEach(card => {
+        const id = card.dataset.id;
+        const sel = selectedDocIds.has(id);
+        card.classList.toggle('selected', sel);
+        const cb = card.querySelector('.doc-checkbox');
+        if (cb) cb.classList.toggle('checked', sel);
+    });
+    // Handle table rows
+    document.querySelectorAll('.doc-grid-row').forEach(row => {
+        const id = row.dataset.id;
+        const sel = selectedDocIds.has(id);
+        row.classList.toggle('selected', sel);
+        const cb = row.querySelector('.doc-checkbox');
+        if (cb) cb.classList.toggle('checked', sel);
+    });
+    // Sync header checkbox
+    const totalCards = document.querySelectorAll('.doc-card').length;
+    const totalRows = document.querySelectorAll('.doc-grid-row').length;
+    const total = totalCards + totalRows;
+    const allChecked = total > 0 && selectedDocIds.size === total;
+    const headerCb = document.getElementById('select-all-docs') || document.getElementById('select-all-table');
+    if (headerCb) headerCb.checked = allChecked;
+}
+
+function toggleSelectAll() {
+    const headerCb = document.getElementById('select-all-docs') || document.getElementById('select-all-table');
+    if (selectedDocIds.size > 0) {
+        selectedDocIds.clear();
+    } else {
+        document.querySelectorAll('.doc-card').forEach(card => selectedDocIds.add(card.dataset.id));
+        document.querySelectorAll('.doc-grid-row').forEach(row => selectedDocIds.add(row.dataset.id));
+    }
+    updateBatchBar();
+    renderDocSelection();
+}
+
+function updateBatchBar() {
+    const bar = document.getElementById('batch-bar');
+    const wrap = document.getElementById('batch-bar-wrap');
+    const count = document.getElementById('batch-count');
+    const prevCount = parseInt(count.textContent) || 0;
+    const newCount = selectedDocIds.size;
+    count.textContent = newCount;
+    const hasSelection = newCount > 0;
+    const appearing = !hasSelection || prevCount === 0;
+    if (wrap) {
+        wrap.classList.toggle('visible', hasSelection);
+        if (hasSelection && appearing) {
+            wrap.style.animation = 'slideDown 0.2s ease-out';
+        }
+    }
+    if (bar) {
+        bar.classList.toggle('visible', hasSelection);
+    }
+}
+
+function clearSelection() {
+    selectedDocIds.clear();
+    updateBatchBar();
+    renderDocSelection();
+}
+
+async function batchDelete() {
+    if (selectedDocIds.size === 0) return;
+    if (!confirm('确定要删除选中的 ' + selectedDocIds.size + ' 份文档吗？此操作不可撤销。')) return;
+    const ids = Array.from(selectedDocIds);
+    await fetch(API + '/documents/batch-delete', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ids})
+    });
+    toast('已删除 ' + ids.length + ' 份文档');
+    selectedDocIds.clear();
+    updateBatchBar();
+    loadCatView();
+    loadStats();
+}
+
+async function batchReprocess() {
+    if (selectedDocIds.size === 0) return;
+    const ids = Array.from(selectedDocIds);
+    await fetch(API + '/documents/batch-reprocess', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ids})
+    });
+    toast('已提交 ' + ids.length + ' 份文档进行重建索引');
+    selectedDocIds.clear();
+    updateBatchBar();
+    loadCatView();
+}
+
+// Settings
+async function loadSettings() {
+    try {
+        const r = await fetch(API + '/config');
+        const cfg = await r.json();
+        document.getElementById('cfg-llm_model').value = cfg.llm_model || 'qwen2.5:7b';
+        document.getElementById('cfg-temperature').value = cfg.temperature;
+        document.getElementById('cfg-temperature-range').value = cfg.temperature;
+        document.getElementById('cfg-max_tokens').value = cfg.max_tokens;
+        document.getElementById('cfg-system_prompt').value = cfg.system_prompt || '';
+        document.getElementById('cfg-search_top_k').value = cfg.search_top_k;
+        document.getElementById('cfg-search_max_depth').value = cfg.search_max_depth;
+        document.getElementById('cfg-tree_max_depth').value = cfg.tree_max_depth;
+        document.getElementById('cfg-tree_max_children').value = cfg.tree_max_children;
+        document.getElementById('cfg-max_tree_context_chars').value = cfg.max_tree_context_chars;
+    } catch(e) {
+        toast('加载配置失败', 'error');
+    }
+}
+
+function syncTemp(val) {
+    document.getElementById('cfg-temperature').value = val;
+}
+
+async function saveSettings() {
+    const body = {};
+    const llm_model = document.getElementById('cfg-llm_model').value;
+    const temperature = parseFloat(document.getElementById('cfg-temperature').value);
+    const max_tokens = parseInt(document.getElementById('cfg-max_tokens').value);
+    const system_prompt = document.getElementById('cfg-system_prompt').value;
+    const search_top_k = parseInt(document.getElementById('cfg-search_top_k').value);
+    const search_max_depth = parseInt(document.getElementById('cfg-search_max_depth').value);
+    const tree_max_depth = parseInt(document.getElementById('cfg-tree_max_depth').value);
+    const tree_max_children = parseInt(document.getElementById('cfg-tree_max_children').value);
+    const max_tree_context_chars = parseInt(document.getElementById('cfg-max_tree_context_chars').value);
+    if (llm_model) body.llm_model = llm_model;
+    if (!isNaN(temperature)) body.temperature = temperature;
+    if (!isNaN(max_tokens)) body.max_tokens = max_tokens;
+    if (system_prompt !== undefined) body.system_prompt = system_prompt;
+    if (!isNaN(search_top_k)) body.search_top_k = search_top_k;
+    if (!isNaN(search_max_depth)) body.search_max_depth = search_max_depth;
+    if (!isNaN(tree_max_depth)) body.tree_max_depth = tree_max_depth;
+    if (!isNaN(tree_max_children)) body.tree_max_children = tree_max_children;
+    if (!isNaN(max_tree_context_chars)) body.max_tree_context_chars = max_tree_context_chars;
+    try {
+        const r = await fetch(API + '/config', {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(body)
+        });
+        if (r.ok) {
+            toast('设置已保存');
+        } else {
+            toast('保存失败', 'error');
+        }
+    } catch(e) {
+        toast('保存失败：' + e.message, 'error');
+    }
+}
+
+// Category management
+let allCategories = [];
+
+async function openCatModal() {
+    await loadAllCategories();
+    document.getElementById('cat-modal').classList.add('show');
+}
+
+function closeCatModal() {
+    document.getElementById('cat-modal').classList.remove('show');
+}
+
+async function loadAllCategories() {
+    try {
+        const r = await fetch(API + '/documents/?limit=200');
+        const d = await r.json();
+        const catCount = {};
+        d.items.forEach(doc => {
+            if (doc.category) {
+                catCount[doc.category] = (catCount[doc.category] || 0) + 1;
+            }
+        });
+        allCategories = Object.entries(catCount).sort((a, b) => a[0].localeCompare(b[0]));
+        // 更新所有分类下拉框
+        const opts = allCategories.map(([name]) =>
+            `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`
+        ).join('');
+        document.getElementById('cat-batch-select').innerHTML =
+            '<option value="">-- 选择已有分类 --</option>' + opts;
+        document.getElementById('doccat-select').innerHTML =
+            '<option value="">-- 清除分类 --</option>' + opts;
+        document.getElementById('batch-cat-select').innerHTML =
+            '<option value="">设为分类...</option>' + opts;
+        renderCatList();
+    } catch(e) {
+        toast('加载分类失败', 'error');
+    }
+}
+
+function renderCatList() {
+    const list = document.getElementById('cat-list');
+    if (allCategories.length === 0) {
+        list.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:13px;padding:16px">暂无分类</div>';
+        return;
+    }
+    list.innerHTML = allCategories.map(([name, count]) => `
+        <div class="cat-item">
+            <span class="cat-item-name">${escapeHtml(name)}</span>
+            <span class="cat-item-count">${count} 份文档</span>
+            <div class="cat-item-actions">
+                <button class="btn" onclick="renameCategory('${escapeHtml(name)}')">重命名</button>
+                <button class="btn btn-danger" onclick="deleteCategory('${escapeHtml(name)}')">删除</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function addCategory() {
+    const input = document.getElementById('cat-new-name');
+    const name = input.value.trim();
+    if (!name) {
+        toast('请输入新分类名称', '');
+        return;
+    }
+    if (selectedDocIds.size === 0) {
+        toast('请先在文档列表中选择要设置分类的文档', '');
+        return;
+    }
+    try {
+        let updated = 0;
+        for (const docId of selectedDocIds) {
+            const formData = new FormData();
+            formData.append('category', name);
+            await fetch(API + '/documents/' + docId, {
+                method: 'PUT',
+                body: formData
+            });
+            updated++;
+        }
+        toast('已将 ' + updated + ' 份文档设为分类 "' + name + '"');
+        input.value = '';
+        selectedDocIds.clear();
+        updateBatchBar();
+        loadDocuments();
+        loadAllCategories();
+    } catch(e) {
+        toast('设置分类失败', 'error');
+    }
+}
+
+async function batchSetCatBar() {
+    const sel = document.getElementById('batch-cat-select');
+    const catName = sel.value;
+    if (!catName) {
+        toast('请先选择分类', '');
+        return;
+    }
+    if (selectedDocIds.size === 0) {
+        toast('请先选择文档', '');
+        return;
+    }
+    try {
+        let updated = 0;
+        for (const docId of selectedDocIds) {
+            const formData = new FormData();
+            formData.append('category', catName);
+            await fetch(API + '/documents/' + docId, {
+                method: 'PUT',
+                body: formData
+            });
+            updated++;
+        }
+        toast('已将 ' + updated + ' 份文档设为分类 "' + catName + '"');
+        selectedDocIds.clear();
+        updateBatchBar();
+        loadDocuments();
+        loadAllCategories();
+    } catch(e) {
+        toast('设置分类失败', 'error');
+    }
+}
+
+async function batchSetCat() {
+    const sel = document.getElementById('cat-batch-select');
+    const catName = sel.value;
+    if (!catName) {
+        toast('请从下拉列表选择一个已有分类', '');
+        return;
+    }
+    if (selectedDocIds.size === 0) {
+        toast('请先在文档列表中选择要设置分类的文档', '');
+        return;
+    }
+    try {
+        let updated = 0;
+        for (const docId of selectedDocIds) {
+            const formData = new FormData();
+            formData.append('category', catName);
+            await fetch(API + '/documents/' + docId, {
+                method: 'PUT',
+                body: formData
+            });
+            updated++;
+        }
+        toast('已将 ' + updated + ' 份文档设为分类 "' + catName + '"');
+        selectedDocIds.clear();
+        updateBatchBar();
+        loadDocuments();
+        loadAllCategories();
+    } catch(e) {
+        toast('设置分类失败', 'error');
+    }
+}
+
+async function renameCategory(oldName) {
+    const newName = prompt('将分类 "' + oldName + '" 重命名为：', oldName);
+    if (!newName || newName === oldName) return;
+    // Rename all docs with this category
+    try {
+        const r = await fetch(API + '/documents/?category=' + encodeURIComponent(oldName) + '&limit=200');
+        const d = await r.json();
+        let updated = 0;
+        for (const doc of d.items) {
+            const formData = new FormData();
+            formData.append('title', doc.title);
+            formData.append('category', newName);
+            await fetch(API + '/documents/' + doc.id, {
+                method: 'PUT',
+                body: formData
+            });
+            updated++;
+        }
+        toast('已将 ' + updated + ' 份文档的分类改为 "' + newName + '"');
+        await loadAllCategories();
+        loadCatView();
+    } catch(e) {
+        toast('重命名失败', 'error');
+    }
+}
+
+async function deleteCategory(catName) {
+    if (!confirm('删除分类 "' + catName + '"？文档本身不会被删除，只是移除分类标签。')) return;
+    try {
+        const r = await fetch(API + '/documents/?category=' + encodeURIComponent(catName) + '&limit=200');
+        const d = await r.json();
+        let updated = 0;
+        for (const doc of d.items) {
+            const formData = new FormData();
+            formData.append('title', doc.title);
+            formData.append('clear_category', 'true');
+            await fetch(API + '/documents/' + doc.id, {
+                method: 'PUT',
+                body: formData
+            });
+            updated++;
+        }
+        toast('已移除 ' + updated + ' 份文档的分类');
+        await loadAllCategories();
+        loadCatView();
+    } catch(e) {
+        toast('删除分类失败', 'error');
+    }
+}
+
+let docCatTargetId = null;
+
+function openDocCatModal(docId, currentCat) {
+    docCatTargetId = docId;
+    const sel = document.getElementById('doccat-select');
+    const newInput = document.getElementById('doccat-new');
+    newInput.value = '';
+    // 选中当前分类
+    const opts = sel.options;
+    for (let i = 0; i < opts.length; i++) {
+        if (opts[i].value === currentCat) {
+            sel.selectedIndex = i;
+            break;
+        }
+    }
+    document.getElementById('doccat-modal').classList.add('show');
+}
+
+function closeDocCatModal() {
+    document.getElementById('doccat-modal').classList.remove('show');
+    docCatTargetId = null;
+}
+
+async function confirmDocCat() {
+    if (!docCatTargetId) return;
+    const sel = document.getElementById('doccat-select');
+    const newInput = document.getElementById('doccat-new');
+    const catName = newInput.value.trim();
+
+    try {
+        const formData = new FormData();
+        if (catName) {
+            formData.append('category', catName);
+        } else if (sel.value) {
+            formData.append('category', sel.value);
+        } else {
+            formData.append('clear_category', 'true');
+        }
+        await fetch(API + '/documents/' + docCatTargetId, {
+            method: 'PUT',
+            body: formData
+        });
+        toast('分类已更新');
+        closeDocCatModal();
+        loadCatView();
+        loadDocuments();
+        loadAllCategories();
+    } catch(e) {
+        toast('设置分类失败', 'error');
+    }
+}
+
+// Upload
+const dropZone = document.getElementById('upload-drop');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    handleFiles(e.dataTransfer.files);
+});
+
+async function handleFiles(files) {
+    if (!files.length) return;
+    const queue = document.getElementById('upload-queue');
+
+    for (const file of files) {
+        const itemId = 'up-' + Math.random().toString(36).slice(2);
+        queue.innerHTML += `<div class="upload-item" id="${itemId}">
+            <div class="upload-item-left">
+                <div class="upload-item-icon">${icons.file}</div>
+                <span class="upload-item-name">${escapeHtml(file.name)}</span>
+            </div>
+            <span class="upload-status" style="color:var(--amber)">上传中…</span>
+        </div>`;
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('title', file.name);
+
+        try {
+            const r = await fetch(API + '/documents/upload', { method: 'POST', body: formData });
+            const statusEl = document.querySelector('#' + itemId + ' .upload-status');
+            if (r.ok) {
+                statusEl.textContent = '已加入队列';
+                statusEl.style.color = 'var(--green)';
+            } else if (r.status === 413) {
+                statusEl.textContent = '文件过大（最大100MB）';
+                statusEl.style.color = 'var(--red)';
+            } else if (r.status === 400) {
+                const err = await r.json().catch(() => ({}));
+                statusEl.textContent = err.detail || '不支持该文件格式';
+                statusEl.style.color = 'var(--red)';
+            } else if (r.status >= 500) {
+                statusEl.textContent = '服务器错误，请稍后重试';
+                statusEl.style.color = 'var(--red)';
+            } else {
+                const err = await r.json().catch(() => ({}));
+                statusEl.textContent = err.detail || '上传失败';
+                statusEl.style.color = 'var(--red)';
+            }
+        } catch(e) {
+            const statusEl = document.querySelector('#' + itemId + ' .upload-status');
+            statusEl.textContent = '网络连接失败';
+            statusEl.style.color = 'var(--red)';
+        }
+    }
+    loadStats();
+    loadCatView();
+}
+</script>
+</body>
+</html>
