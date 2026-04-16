@@ -348,16 +348,16 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 8px 12px;
-            background: var(--bg);
+            padding: 10px 14px;
+            background: var(--surface-hover);
             border: 1px solid var(--border);
             border-radius: var(--radius);
             margin-bottom: 6px;
             font-size: 13px;
         }
-        .cat-item-name { color: var(--text); }
-        .cat-item-count { font-size: 12px; color: var(--text-muted); margin-left: 8px; }
-        .cat-item-actions { display: flex; gap: 4px; }
+        .cat-item-name { color: var(--text); font-weight: 500; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .cat-item-count { font-size: 12px; color: var(--text-muted); margin-left: 10px; flex-shrink: 0; }
+        .cat-item-actions { display: flex; gap: 4px; flex-shrink: 0; }
         .cat-item-actions .btn { padding: 4px 8px; font-size: 11px; }
         .cat-doc-count {
             font-size: 12px;
