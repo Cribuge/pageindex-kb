@@ -8,14 +8,17 @@
 - **无向量架构**：不使用任何向量数据库，依赖关键词匹配 + 树结构 + LLM 重排
 - **流式对话**：支持 SSE 流式输出，实时显示 LLM 回复
 - **多格式支持**：PDF、Word(.doc/.docx)、Excel(.xls/.xlsx)、TXT、Markdown
-- **文档管理**：分类管理、批量操作、重命名、重新索引
-- **可配置参数**：模型选择、温度、TOP_K、树深度等均可通过界面调整
+- **双界面分离**：主界面（/）仅保留智能对话和文档查看，管理功能（/admin/）独立管理界面
+- **文档管理**：分类增删改、批量操作（删除/重建索引）、重命名、查看树索引
+- **系统设置**：LLM 模型、温度、检索参数、树索引参数均可通过界面调整并持久化
 
 ## 系统架构
 
 ```
 ┌─────────────────────────────────────────────────────┐
 │  Web (Nginx) — 静态页面，端口 3001                   │
+│    /         → 智能对话 + 文档查看                   │
+│    /admin/   → 文档管理 + 上传 + 系统设置            │
 ├─────────────────────────────────────────────────────┤
 │  API (FastAPI) — 文档上传、搜索问答、配置管理，端口 8001 │
 ├─────────────────────────────────────────────────────┤
@@ -47,7 +50,8 @@ docker --context desktop-linux compose up -d
 
 | 服务 | 地址 |
 |------|------|
-| 前端界面 | http://localhost:3001 |
+| 主界面（对话） | http://localhost:3001 |
+| 管理界面 | http://localhost:3001/admin/ |
 | API 文档 | http://localhost:8001/docs |
 | Ollama | http://localhost:11434 |
 
@@ -61,7 +65,26 @@ docker --context desktop-linux compose stop
 
 ## 使用流程
 
-### 1. 上传文档
+### 1. 智能对话（主界面）
+
+访问 http://localhost:3001，输入问题。系统会：
+1. 在已索引的文档中搜索相关内容
+2. 结合检索上下文生成回答
+3. 流式输出结果
+
+可点击检索结果中的链接跳转查看原文档内容。
+
+### 2. 文档管理（管理界面）
+
+访问 http://localhost:3001/admin/，左侧导航点击 **文档管理**：
+
+- **分类侧边栏**：显示各分类文档数量，点击筛选该分类
+- **添加分类**：点击分类标题旁的 `+`，可新建分类或重命名已有分类
+- **批量操作**：勾选多个文档后，可批量删除、批量重建索引、批量设置分类
+- **单文档操作**：分类（文件夹图标）、重命名（铅笔图标）、删除（垃圾桶图标）
+- **查看树索引**：点击图表图标，可视化查看该文档的树结构
+
+### 3. 上传文档
 
 左侧导航点击 **上传文档**，拖拽或选择文件。支持 PDF、Word、Excel、TXT、Markdown，单文件最大 100MB。
 
@@ -70,30 +93,15 @@ docker --context desktop-linux compose stop
 2. 构建 PageIndex 层级树
 3. 存储树节点到数据库
 
-### 2. 管理文档
+### 4. 系统设置
 
-左侧导航点击 **文档管理**：
-- **分类卡片**：按分类统计文档数量，点击进入分类查看文档列表
-- **批量操作**：勾选多个文档后可批量删除或重建索引
-- **重命名**：点击文档行操作栏铅笔图标
-- **设置分类**：点击文件夹图标，选择或新建分类
-- **查看树索引**：点击图表图标，可视化查看该文档的树结构
-- **删除**：点击删除图标
+左侧导航点击 **系统设置**，三组配置：
 
-### 3. 智能对话
+- **模型配置**：LLM 模型（需 Ollama 已下载）、温度、最大生成长度、系统提示词
+- **检索配置**：TOP_K（返回结果数量）、搜索深度
+- **树索引配置**：树最大深度、最大子节点数、最大上下文字符数
 
-左侧导航点击 **智能对话**，输入问题。系统会：
-1. 在已索引的文档中搜索相关内容
-2. 结合检索上下文生成回答
-3. 流式输出结果
-
-### 4. 系统设置（规划中）
-
-左侧导航点击 **系统设置**，可配置：
-- LLM 模型（需 Ollama 已下载对应模型）
-- Temperature、Max Tokens
-- 检索参数（TOP_K、搜索深度）
-- 树索引参数（最大深度、最大子节点数）
+> 注意：参数变更仅影响新上传或重新处理的文档
 
 ## 项目结构
 
@@ -103,7 +111,7 @@ knowledge-base-pageindex/
 │   ├── api/
 │   │   ├── chat.py          # 对话 API（/chat/stream 流式问答）
 │   │   ├── config.py        # 系统配置 API（GET/PUT /config）
-│   │   └── document.py      # 文档管理 API（上传/删除/更新/树索引）
+│   │   └── document.py      # 文档管理 API（上传/删除/更新/分类/树索引）
 │   ├── core/
 │   │   ├── config.py        # Pydantic Settings（所有配置项）
 │   │   └── database.py      # SQLAlchemy Session 管理
@@ -118,7 +126,7 @@ knowledge-base-pageindex/
 │   ├── services/
 │   │   ├── document_processor.py  # 文本提取（PDF/Word/Excel/TXT）
 │   │   ├── ingestion.py     # 后台上传处理流程
-│   │   ├── llm_service.py    # Ollama LLM 调用封装
+│   │   ├── llm_service.py   # Ollama LLM 调用封装
 │   │   ├── rag_service.py   # RAG 问答核心逻辑
 │   │   ├── storage.py       # 文件存储服务
 │   │   ├── tree_builder.py  # PageIndex 树构建（LLM 生成结构）
@@ -126,7 +134,8 @@ knowledge-base-pageindex/
 │   ├── main.py              # FastAPI 应用入口
 │   └── requirements.txt
 ├── web/
-│   ├── index.html           # 前端单页应用（HTML/CSS/JS）
+│   ├── index.html           # 主界面（智能对话 + 文档查看）
+│   ├── admin.html            # 管理界面（文档管理 + 上传 + 设置）
 │   └── nginx.conf           # Nginx 配置（反向代理 + 上传限制）
 ├── scripts/
 │   ├── init_db.py           # 数据库初始化
@@ -154,8 +163,7 @@ knowledge-base-pageindex/
 ### 更换 LLM 模型
 
 1. 确保 Ollama 已下载模型：`ollama pull deepseek-r1:14b`
-2. 修改 `docker-compose.yml` 中 `LLM_MODEL` 值
-3. 重启 API：`docker --context desktop-linux compose up -d api`
+2. 在管理界面 **系统设置** 中选择新模型并保存，或修改 `docker-compose.yml` 中 `LLM_MODEL` 值后重启 API
 
 ## 数据库模型
 
@@ -184,7 +192,15 @@ knowledge-base-pageindex/
 | `start_index` | Integer | 文本起始行 |
 | `end_index` | Integer | 文本结束行 |
 | `depth` | Integer | 树深度 |
-| `path` | String |  materialized path |
+| `path` | String | Materialized path |
+
+### SystemConfig
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `key` | String | 配置键（主键） |
+| `value` | JSON | 配置值 |
+| `updated_at` | DateTime | 更新时间 |
 
 ## API 端点
 
@@ -200,6 +216,7 @@ knowledge-base-pageindex/
 | `DELETE` | `/documents/{id}` | 删除文档 |
 | `POST` | `/documents/batch-delete` | 批量删除 |
 | `POST` | `/documents/batch-reprocess` | 批量重建索引 |
+| `POST` | `/documents/categories/rename` | 重命名分类（old_name → new_name） |
 | `GET` | `/documents/{id}/tree` | 获取文档树索引 |
 
 ### 对话
@@ -213,7 +230,7 @@ knowledge-base-pageindex/
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | `GET` | `/config` | 获取所有配置项 |
-| `PUT` | `/config` | 更新配置项 |
+| `PUT` | `/config` | 更新配置项（部分更新，仅修改非 null 字段） |
 
 ## 常见问题
 
@@ -221,13 +238,16 @@ knowledge-base-pageindex/
 A: 检查是否为 413（文件过大，超过 100MB）或 400（不支持的文件格式）。确认 Docker Desktop 已启动。
 
 **Q: 对话返回"暂无相关文档"？**
-A: 确认文档状态为 `indexed`（已索引）。失败状态可进入文档管理手动重新处理。
+A: 确认文档状态为 `indexed`（已索引）。失败状态可进入管理界面手动重新处理。
 
 **Q: 如何更换为其他 LLM 模型？**
-A: 修改 `docker-compose.yml` 中 `LLM_MODEL`，并确保 Ollama 已下载该模型。
+A: 在管理界面系统设置中选择模型并保存，或修改 `docker-compose.yml` 中 `LLM_MODEL` 值后重启 API。
 
 **Q: 文档处理很慢？**
 A: 树索引构建依赖 LLM 推理速度。qwen2.5:7b 在 CPU 上处理一页 PDF 约需 1-2 秒。
+
+**Q: 管理界面无法加载（加载文档失败/加载设置失败）？**
+A: 确保通过 http://localhost:3001/admin/ 访问（不是 http://localhost:8001/admin/），且 API 服务正常运行。
 
 ## License
 

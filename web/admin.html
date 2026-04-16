@@ -1,0 +1,1633 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PageIndex 管理后台</title>
+    <style>
+        :root {
+            --bg-deep: #eef2f8;
+            --bg: #0d2a5f;
+            --surface: #ffffff;
+            --surface-hover: #e8f2ff;
+            --surface-active: #d4e8ff;
+            --border: #c2d9f8;
+            --border-subtle: #dce9fb;
+            --text: #1a2a3a;
+            --text-secondary: #4a6a8a;
+            --text-muted: #8aabb8;
+            --accent: #1a5fc8;
+            --accent-dim: rgba(26, 95, 200, 0.1);
+            --green: #16a34a;
+            --red: #dc2626;
+            --amber: #d97706;
+            --radius: 8px;
+            --radius-lg: 12px;
+            --shadow-sm: 0 1px 3px rgba(26,95,200,0.08);
+            --shadow-md: 0 4px 12px rgba(26,95,200,0.12);
+            --shadow-lg: 0 8px 24px rgba(26,95,200,0.16);
+            --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-deep);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg);
+            color: white;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            gap: 16px;
+            box-shadow: var(--shadow-md);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+        }
+
+        .header-logo {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent), #3b82f6);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 18px;
+            color: white;
+        }
+
+        .header-title {
+            font-size: 18px;
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .header-back {
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            font-size: 14px;
+            padding: 8px 16px;
+            border-radius: var(--radius);
+            transition: var(--transition);
+        }
+
+        .header-back:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        /* Main Layout */
+        .main-container {
+            display: flex;
+            margin-top: 56px;
+            min-height: calc(100vh - 56px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 200px;
+            background: var(--bg);
+            color: white;
+            padding: 24px 0;
+            position: fixed;
+            top: 56px;
+            left: 0;
+            bottom: 0;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            padding: 12px 24px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .nav-item.active {
+            background: rgba(255,255,255,0.15);
+            border-left-color: var(--accent);
+        }
+
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.9;
+        }
+
+        /* Content */
+        .content {
+            flex: 1;
+            margin-left: 200px;
+            padding: 24px;
+        }
+
+        .panel {
+            display: none;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        /* Document Management Panel */
+        .doc-panel {
+            display: flex;
+            gap: 20px;
+            height: calc(100vh - 104px);
+        }
+
+        .cat-sidebar {
+            width: 180px;
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            box-shadow: var(--shadow-sm);
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .cat-sidebar h3 {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .cat-item {
+            padding: 10px 12px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+        }
+
+        .cat-item:hover {
+            background: var(--surface-hover);
+        }
+
+        .cat-item.active {
+            background: var(--accent-dim);
+            color: var(--accent);
+        }
+
+        .cat-count {
+            background: var(--bg-deep);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .cat-item.active .cat-count {
+            background: var(--accent);
+            color: white;
+        }
+
+        .doc-main {
+            flex: 1;
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .doc-toolbar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            align-items: center;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 10px 16px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 14px;
+            transition: var(--transition);
+            outline: none;
+        }
+
+        .search-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-dim);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1648a8;
+        }
+
+        .btn-secondary {
+            background: var(--surface-hover);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--surface-active);
+        }
+
+        .btn-link {
+            background: none;
+            border: none;
+            color: var(--accent);
+            font-size: 14px;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .btn-link:hover {
+            background: var(--surface-hover);
+        }
+
+        .btn-danger {
+            background: var(--red);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+
+        .btn-icon {
+            padding: 8px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+        }
+
+        .btn-icon:hover {
+            background: var(--surface-hover);
+        }
+
+        /* Batch Bar */
+        .batch-bar {
+            display: none;
+            background: var(--accent-dim);
+            padding: 12px 16px;
+            border-radius: var(--radius);
+            margin-bottom: 16px;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .batch-bar.show {
+            display: flex;
+        }
+
+        .batch-bar span {
+            font-size: 14px;
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        .batch-bar .btn {
+            padding: 6px 14px;
+            font-size: 13px;
+        }
+
+        /* Table */
+        .doc-table-wrapper {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .doc-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .doc-table th {
+            text-align: left;
+            padding: 12px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: var(--bg-deep);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+        }
+
+        .doc-table th:first-child {
+            border-radius: var(--radius) 0 0 0;
+        }
+
+        .doc-table th:last-child {
+            border-radius: 0 var(--radius) 0 0;
+        }
+
+        .doc-table td {
+            padding: 12px 16px;
+            font-size: 14px;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: middle;
+        }
+
+        .doc-table tr:hover td {
+            background: var(--surface-hover);
+        }
+
+        .doc-table .checkbox-cell {
+            width: 40px;
+        }
+
+        .doc-table input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: var(--accent);
+        }
+
+        .doc-name {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .doc-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--accent-dim);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .doc-format {
+            display: inline-block;
+            padding: 4px 8px;
+            background: var(--bg-deep);
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .doc-size {
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        .doc-date {
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        .doc-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .doc-actions button {
+            padding: 6px 10px;
+            font-size: 12px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--text-secondary);
+        }
+
+        .doc-actions button:hover {
+            background: var(--surface-hover);
+            color: var(--text);
+        }
+
+        .doc-actions .delete-btn:hover {
+            background: #fee2e2;
+            color: var(--red);
+            border-color: var(--red);
+        }
+
+        /* Upload Panel */
+        .upload-panel {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius-lg);
+            padding: 60px;
+            text-align: center;
+            transition: var(--transition);
+            cursor: pointer;
+            background: var(--surface);
+        }
+
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: var(--accent);
+            background: var(--accent-dim);
+        }
+
+        .drop-zone-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 20px;
+            background: var(--accent-dim);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: var(--accent);
+        }
+
+        .drop-zone h3 {
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+
+        .drop-zone p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .upload-queue {
+            margin-top: 24px;
+        }
+
+        .upload-queue h4 {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .upload-item {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .upload-item-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--accent-dim);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .upload-item-info {
+            flex: 1;
+        }
+
+        .upload-item-name {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .upload-item-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .upload-item-status {
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .upload-item-status.pending {
+            background: var(--bg-deep);
+            color: var(--text-secondary);
+        }
+
+        .upload-item-status.uploading {
+            background: #fef3c7;
+            color: var(--amber);
+        }
+
+        .upload-item-status.done {
+            background: #dcfce7;
+            color: var(--green);
+        }
+
+        .upload-item-status.error {
+            background: #fee2e2;
+            color: var(--red);
+        }
+
+        .upload-progress {
+            width: 100px;
+            height: 4px;
+            background: var(--bg-deep);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .upload-progress-bar {
+            height: 100%;
+            background: var(--accent);
+            transition: width 0.3s;
+        }
+
+        /* Settings Panel */
+        .settings-panel {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .settings-card {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .settings-card h3 {
+            font-size: 16px;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .settings-card h3 .icon {
+            width: 28px;
+            height: 28px;
+            background: var(--accent-dim);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: var(--accent);
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 14px;
+            transition: var(--transition);
+            outline: none;
+            background: var(--surface);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-dim);
+        }
+
+        .form-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .settings-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .settings-hint {
+            font-size: 12px;
+            color: #e67e22;
+            margin-top: 8px;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            width: 90%;
+            max-width: 480px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .modal h3 {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .modal-actions .btn {
+            min-width: 100px;
+        }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 300;
+        }
+
+        .toast {
+            background: var(--text);
+            color: white;
+            padding: 12px 20px;
+            border-radius: var(--radius);
+            font-size: 14px;
+            margin-top: 8px;
+            box-shadow: var(--shadow-md);
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.success {
+            background: var(--green);
+        }
+
+        .toast.error {
+            background: var(--red);
+        }
+
+        .toast.warning {
+            background: var(--amber);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state h4 {
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+
+        .empty-state p {
+            font-size: 14px;
+        }
+
+        /* Loading */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 12px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-logo">P</div>
+        <h1 class="header-title">PageIndex 管理后台</h1>
+        <a href="/" class="header-back">← 返回对话</a>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="nav-item active" data-panel="docs">
+                <span class="nav-icon">📄</span>
+                <span>文档管理</span>
+            </div>
+            <div class="nav-item" data-panel="upload">
+                <span class="nav-icon">⬆</span>
+                <span>上传文档</span>
+            </div>
+            <div class="nav-item" data-panel="settings">
+                <span class="nav-icon">⚙</span>
+                <span>系统设置</span>
+            </div>
+        </nav>
+
+        <!-- Content -->
+        <main class="content">
+            <!-- Document Management Panel -->
+            <div id="panel-docs" class="panel active">
+                <div class="doc-panel">
+                    <!-- Category Sidebar -->
+                    <aside class="cat-sidebar">
+                        <h3>文档分类 <button class="btn-link" onclick="openAddCatModal()" title="添加分类">+</button></h3>
+                        <div id="cat-list">
+                            <div class="loading"><div class="spinner"></div>加载中...</div>
+                        </div>
+                    </aside>
+
+                    <!-- Document Main Area -->
+                    <div class="doc-main">
+                        <div class="batch-bar" id="batch-bar">
+                            <span id="selected-count">已选择 0 项</span>
+                            <button class="btn btn-secondary" onclick="openBatchCatModal()">批量设置分类</button>
+                            <button class="btn btn-secondary" onclick="openBatchRenameModal()">批量重命名</button>
+                            <button class="btn btn-danger" onclick="batchDelete()">批量删除</button>
+                            <button class="btn-icon" onclick="clearSelection()" title="取消选择">✕</button>
+                        </div>
+
+                        <div class="doc-toolbar">
+                            <input type="text" class="search-input" id="search-input" placeholder="搜索文档名称..." oninput="handleSearch()">
+                            <button class="btn btn-secondary" onclick="loadDocs()">刷新</button>
+                        </div>
+
+                        <div class="doc-table-wrapper">
+                            <table class="doc-table">
+                                <thead>
+                                    <tr>
+                                        <th class="checkbox-cell"><input type="checkbox" id="select-all" onchange="toggleSelectAll()"></th>
+                                        <th>名称</th>
+                                        <th>格式</th>
+                                        <th>大小</th>
+                                        <th>日期</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="doc-list">
+                                    <tr><td colspan="6"><div class="loading"><div class="spinner"></div>加载中...</div></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload Panel -->
+            <div id="panel-upload" class="panel">
+                <div class="upload-panel">
+                    <div class="drop-zone" id="drop-zone">
+                        <div class="drop-zone-icon">📤</div>
+                        <h3>拖拽文件到此处上传</h3>
+                        <p>或者点击选择文件</p>
+                        <input type="file" id="file-input" multiple style="display:none">
+                    </div>
+
+                    <div class="upload-queue" id="upload-queue" style="display:none">
+                        <h4>上传队列</h4>
+                        <div id="upload-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Panel -->
+            <div id="panel-settings" class="panel">
+                <div class="settings-panel">
+                    <div class="settings-card">
+                        <h3><span class="icon">🤖</span> 模型配置</h3>
+                        <div class="form-group">
+                            <label>LLM 模型</label>
+                            <select id="cfg-llm_model">
+                                <option value="qwen2.5:7b">qwen2.5:7b</option>
+                                <option value="qwen2.5:14b">qwen2.5:14b</option>
+                                <option value="qwen2.5:72b">qwen2.5:72b</option>
+                                <option value="qwen2.5:3b">qwen2.5:3b</option>
+                                <option value="llama3.1:8b">llama3.1:8b</option>
+                                <option value="llama3.1:70b">llama3.1:70b</option>
+                                <option value="deepseek-r1:7b">deepseek-r1:7b</option>
+                                <option value="deepseek-r1:14b">deepseek-r1:14b</option>
+                                <option value="gpt-4o">gpt-4o</option>
+                                <option value="gpt-4o-mini">gpt-4o-mini</option>
+                                <option value="claude-3.5-sonnet">claude-3.5-sonnet</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>温度 (temperature)</label>
+                                <input type="number" id="cfg-temperature" value="0.7" step="0.1" min="0" max="2">
+                            </div>
+                            <div class="form-group">
+                                <label>最大生成长度</label>
+                                <input type="number" id="cfg-max_tokens" value="2048" min="100" max="8192">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>系统提示词 (system_prompt)</label>
+                            <textarea id="cfg-system_prompt" rows="3" placeholder="可选，覆盖默认系统提示词"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3><span class="icon">🔍</span> 检索配置</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>TOP_K (search_top_k)</label>
+                                <input type="number" id="cfg-search_top_k" value="5" min="1" max="20">
+                            </div>
+                            <div class="form-group">
+                                <label>搜索深度 (search_max_depth)</label>
+                                <input type="number" id="cfg-search_max_depth" value="4" min="1" max="10">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3><span class="icon">🌲</span> 树索引配置</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>树最大深度</label>
+                                <input type="number" id="cfg-tree_max_depth" value="5" min="1" max="20">
+                            </div>
+                            <div class="form-group">
+                                <label>最大子节点数</label>
+                                <input type="number" id="cfg-tree_max_children" value="10" min="1" max="50">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>最大上下文字符数</label>
+                            <input type="number" id="cfg-max_tree_context_chars" value="20000" min="1000" max="100000">
+                        </div>
+                        <p class="settings-hint">⚠️ 参数变更仅影响新上传或重新处理的文档</p>
+                    </div>
+
+                    <div class="settings-actions">
+                        <button class="btn btn-secondary" onclick="loadSettings()">重置</button>
+                        <button class="btn btn-primary" onclick="saveSettings()">保存设置</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Batch Category Modal -->
+    <div class="modal-overlay" id="batch-cat-modal">
+        <div class="modal">
+            <h3>批量设置分类</h3>
+            <div class="form-group">
+                <label>选择已有分类</label>
+                <select id="batch-cat-select">
+                    <option value="">-- 选择分类 --</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>或输入新分类名称</label>
+                <input type="text" id="batch-cat-new" placeholder="输入新分类名称">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeBatchCatModal()">取消</button>
+                <button class="btn btn-primary" onclick="confirmBatchCat()">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Batch Rename Modal -->
+    <div class="modal-overlay" id="batch-rename-modal">
+        <div class="modal">
+            <h3>批量重命名</h3>
+            <div class="form-group">
+                <label>新名称</label>
+                <input type="text" id="batch-rename-input" placeholder="输入新的文档名称">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeBatchRenameModal()">取消</button>
+                <button class="btn btn-primary" onclick="confirmBatchRename()">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Doc Category Modal -->
+    <div class="modal-overlay" id="doccat-modal">
+        <div class="modal">
+            <h3>设置文档分类</h3>
+            <div class="form-group">
+                <label>选择分类</label>
+                <select id="doccat-select">
+                    <option value="">-- 选择分类 --</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>或输入新分类名称</label>
+                <input type="text" id="doccat-new" placeholder="输入新分类名称">
+            </div>
+            <input type="hidden" id="doccat-doc-id">
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeDocCatModal()">取消</button>
+                <button class="btn btn-primary" onclick="confirmDocCat()">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Add Category Modal -->
+    <div class="modal-overlay" id="add-cat-modal">
+        <div class="modal">
+            <h3>添加分类</h3>
+            <div class="form-group">
+                <label>选择要重命名的分类（可选）</label>
+                <select id="addcat-old">
+                    <option value="">-- 不重命名，直接新建 --</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>新分类名称</label>
+                <input type="text" id="addcat-new" placeholder="输入新分类名称">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeAddCatModal()">取消</button>
+                <button class="btn btn-primary" onclick="confirmAddCat()">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = '/api';
+        // State
+        let allDocs = [];
+        let filteredDocs = [];
+        let selectedIds = new Set();
+        let currentCat = 'all';
+        let searchQuery = '';
+        let settingsData = {};
+        let uploadQueue = [];
+        let searchTimeout = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            initNav();
+            initDropZone();
+            loadDocs();
+            loadSettings();
+        });
+
+        // Navigation
+        function initNav() {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const panel = this.dataset.panel;
+                    switchPanel(panel);
+                });
+            });
+        }
+
+        function switchPanel(panel) {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.toggle('active', item.dataset.panel === panel);
+            });
+            document.querySelectorAll('.panel').forEach(p => {
+                p.classList.toggle('active', p.id === `panel-${panel}`);
+            });
+        }
+
+        // Load Documents
+        async function loadDocs() {
+            try {
+                const response = await fetch(API + '/documents/?limit=200');
+                if (!response.ok) throw new Error('Failed to load documents');
+                const data = await response.json();
+                allDocs = data.items || data || [];
+                renderCatSidebar();
+                filterDocs();
+            } catch (error) {
+                toast('加载文档失败: ' + error.message, 'error');
+                document.getElementById('doc-list').innerHTML =
+                    '<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">❌</div><h4>加载失败</h4><p>' + error.message + '</p></div></td></tr>';
+            }
+        }
+
+        // Render Category Sidebar
+        function renderCatSidebar() {
+            const catCounts = { all: allDocs.length };
+            allDocs.forEach(doc => {
+                const cat = doc.category || '未分类';
+                catCounts[cat] = (catCounts[cat] || 0) + 1;
+            });
+
+            const catList = document.getElementById('cat-list');
+            let html = `<div class="cat-item ${currentCat === 'all' ? 'active' : ''}" onclick="switchCat('all')">
+                全部文档 <span class="cat-count">${catCounts.all}</span>
+            </div>`;
+
+            Object.keys(catCounts).filter(c => c !== 'all').sort().forEach(cat => {
+                html += `<div class="cat-item ${currentCat === cat ? 'active' : ''}" onclick="switchCat('${escapeHtml(cat)}')">
+                    ${escapeHtml(cat)} <span class="cat-count">${catCounts[cat]}</span>
+                </div>`;
+            });
+
+            catList.innerHTML = html;
+
+            // Update batch cat select
+            const batchCatSelect = document.getElementById('batch-cat-select');
+            const docCatSelect = document.getElementById('doccat-select');
+            const cats = Object.keys(catCounts).filter(c => c !== 'all');
+            const options = cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+            batchCatSelect.innerHTML = '<option value="">-- 选择分类 --</option>' + options;
+            docCatSelect.innerHTML = '<option value="">-- 选择分类 --</option>' + options;
+        }
+
+        function switchCat(cat) {
+            currentCat = cat;
+            filterDocs();
+            renderCatSidebar();
+        }
+
+        // Filter Docs
+        function filterDocs() {
+            filteredDocs = allDocs.filter(doc => {
+                const matchCat = currentCat === 'all' || (doc.category || '未分类') === currentCat;
+                const matchSearch = !searchQuery || doc.title.toLowerCase().includes(searchQuery.toLowerCase());
+                return matchCat && matchSearch;
+            });
+            renderDocList(filteredDocs);
+        }
+
+        // Render Document List
+        function renderDocList(items) {
+            const tbody = document.getElementById('doc-list');
+
+            if (items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">📭</div><h4>暂无文档</h4><p>上传文档后即可在此处管理</p></div></td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = items.map(doc => {
+                const size = formatSize(doc.size);
+                const date = formatDate(doc.created_at || doc.updated_at);
+                const ext = getExtension(doc.title);
+                const isSelected = selectedIds.has(doc.id);
+                return `<tr>
+                    <td class="checkbox-cell">
+                        <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleDocSelect(${doc.id}, event)">
+                    </td>
+                    <td>
+                        <div class="doc-name">
+                            <div class="doc-icon">${ext.toUpperCase()}</div>
+                            <span>${escapeHtml(doc.title)}</span>
+                        </div>
+                    </td>
+                    <td><span class="doc-format">${ext.toUpperCase()}</span></td>
+                    <td class="doc-size">${size}</td>
+                    <td class="doc-date">${date}</td>
+                    <td>
+                        <div class="doc-actions">
+                            <button onclick="openDocCatModal(${doc.id}, '${escapeHtml(doc.category || '')}')">分类</button>
+                            <button onclick="renameDoc(${doc.id}, '${escapeHtml(doc.title)}')">重命名</button>
+                            <button class="delete-btn" onclick="deleteDoc(${doc.id})">删除</button>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+
+            syncSelectAll();
+        }
+
+        // Selection
+        function toggleDocSelect(id, event) {
+            if (event.target.checked) {
+                selectedIds.add(id);
+            } else {
+                selectedIds.delete(id);
+            }
+            updateBatchBar();
+            syncSelectAll();
+        }
+
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('select-all');
+            if (selectAll.checked) {
+                filteredDocs.forEach(doc => selectedIds.add(doc.id));
+            } else {
+                selectedIds.clear();
+            }
+            syncSelectAll();
+            updateBatchBar();
+        }
+
+        function syncSelectAll() {
+            const selectAll = document.getElementById('select-all');
+            const checkboxes = document.querySelectorAll('#doc-list input[type="checkbox"]');
+            const allChecked = checkboxes.length > 0 && checkboxes.length === filteredDocs.filter(d => selectedIds.has(d.id)).length;
+            selectAll.checked = allChecked;
+            selectAll.indeterminate = selectedIds.size > 0 && !allChecked;
+        }
+
+        function updateBatchBar() {
+            const batchBar = document.getElementById('batch-bar');
+            const countEl = document.getElementById('selected-count');
+            batchBar.classList.toggle('show', selectedIds.size > 0);
+            countEl.textContent = `已选择 ${selectedIds.size} 项`;
+        }
+
+        function clearSelection() {
+            selectedIds.clear();
+            document.querySelectorAll('#doc-list input[type="checkbox"]').forEach(cb => cb.checked = false);
+            document.getElementById('select-all').checked = false;
+            updateBatchBar();
+        }
+
+        // Search
+        function handleSearch() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                searchQuery = document.getElementById('search-input').value;
+                filterDocs();
+            }, 300);
+        }
+
+        // Delete Document
+        async function deleteDoc(id) {
+            if (!confirm('确定要删除这个文档吗？')) return;
+            try {
+                const response = await fetch(API + `/documents/${id}`, { method: 'DELETE' });
+                if (!response.ok) throw new Error('Delete failed');
+                toast('文档已删除', 'success');
+                await loadDocs();
+            } catch (error) {
+                toast('删除失败: ' + error.message, 'error');
+            }
+        }
+
+        // Batch Delete
+        async function batchDelete() {
+            if (selectedIds.size === 0) return;
+            if (!confirm(`确定要删除选中的 ${selectedIds.size} 个文档吗？`)) return;
+            try {
+                const response = await fetch(API + '/documents/batch-delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids: Array.from(selectedIds) })
+                });
+                if (!response.ok) throw new Error('Batch delete failed');
+                toast('批量删除成功', 'success');
+                selectedIds.clear();
+                await loadDocs();
+            } catch (error) {
+                toast('批量删除失败: ' + error.message, 'error');
+            }
+        }
+
+        // Rename Document
+        function renameDoc(id, currentName) {
+            const newName = prompt('输入新名称:', currentName);
+            if (!newName || newName === currentName) return;
+            putDoc(id, { title: newName });
+        }
+
+        async function putDoc(id, data) {
+            try {
+                const response = await fetch(API + `/documents/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (!response.ok) throw new Error('Update failed');
+                toast('更新成功', 'success');
+                await loadDocs();
+            } catch (error) {
+                toast('更新失败: ' + error.message, 'error');
+            }
+        }
+
+        // Batch Rename
+        function openBatchRenameModal() {
+            if (selectedIds.size === 0) return;
+            document.getElementById('batch-rename-input').value = '';
+            document.getElementById('batch-rename-modal').classList.add('show');
+        }
+
+        function closeBatchRenameModal() {
+            document.getElementById('batch-rename-modal').classList.remove('show');
+        }
+
+        async function confirmBatchRename() {
+            const newName = document.getElementById('batch-rename-input').value.trim();
+            if (!newName) return;
+            closeBatchRenameModal();
+
+            let success = 0, failed = 0;
+            for (const id of selectedIds) {
+                try {
+                    await putDoc(id, { title: newName });
+                    success++;
+                } catch {
+                    failed++;
+                }
+            }
+            selectedIds.clear();
+            toast(`重命名完成: ${success} 成功, ${failed} 失败`, failed > 0 ? 'warning' : 'success');
+            await loadDocs();
+        }
+
+        // Batch Category
+        function openBatchCatModal() {
+            if (selectedIds.size === 0) return;
+            document.getElementById('batch-cat-select').value = '';
+            document.getElementById('batch-cat-new').value = '';
+            document.getElementById('batch-cat-modal').classList.add('show');
+        }
+
+        function closeBatchCatModal() {
+            document.getElementById('batch-cat-modal').classList.remove('show');
+        }
+
+        async function confirmBatchCat() {
+            const cat = document.getElementById('batch-cat-select').value || document.getElementById('batch-cat-new').value.trim();
+            if (!cat) return;
+            closeBatchCatModal();
+
+            let success = 0, failed = 0;
+            for (const id of selectedIds) {
+                try {
+                    await putDoc(id, { category: cat });
+                    success++;
+                } catch {
+                    failed++;
+                }
+            }
+            selectedIds.clear();
+            toast(`分类设置完成: ${success} 成功, ${failed} 失败`, failed > 0 ? 'warning' : 'success');
+            await loadDocs();
+        }
+
+        // Single Doc Category
+        function openDocCatModal(id, currentCat) {
+            document.getElementById('doccat-doc-id').value = id;
+            document.getElementById('doccat-select').value = currentCat;
+            document.getElementById('doccat-new').value = '';
+            document.getElementById('doccat-modal').classList.add('show');
+        }
+
+        function closeDocCatModal() {
+            document.getElementById('doccat-modal').classList.remove('show');
+        }
+
+        async function confirmDocCat() {
+            const id = document.getElementById('doccat-doc-id').value;
+            const cat = document.getElementById('doccat-select').value || document.getElementById('doccat-new').value.trim();
+            if (!cat) return;
+            closeDocCatModal();
+            await putDoc(id, { category: cat });
+        }
+
+        // Add Category Modal
+        function openAddCatModal() {
+            const select = document.getElementById('addcat-old');
+            const cats = Object.keys(
+                allDocs.reduce((acc, doc) => {
+                    const c = doc.category || '未分类';
+                    acc[c] = true;
+                    return acc;
+                }, {})
+            ).sort();
+            select.innerHTML = '<option value="">-- 不重命名，直接新建 --</option>' +
+                cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+            document.getElementById('addcat-new').value = '';
+            document.getElementById('add-cat-modal').classList.add('show');
+        }
+
+        function closeAddCatModal() {
+            document.getElementById('add-cat-modal').classList.remove('show');
+        }
+
+        async function confirmAddCat() {
+            const oldName = document.getElementById('addcat-old').value;
+            const newName = document.getElementById('addcat-new').value.trim();
+            if (!newName) return;
+            closeAddCatModal();
+            try {
+                const form = new FormData();
+                form.append('old_name', oldName);
+                form.append('new_name', newName);
+                const res = await fetch(API + '/documents/categories/rename', { method: 'POST', body: form });
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    toast((err.detail || '重命名分类失败'), 'error');
+                    return;
+                }
+                toast(`分类${oldName ? '已重命名' : '已创建'}: ${newName}`, 'success');
+                loadDocs();
+            } catch (e) {
+                toast('操作失败: ' + e.message, 'error');
+            }
+        }
+
+        // Drop Zone
+        function initDropZone() {
+            const dropZone = document.getElementById('drop-zone');
+            const fileInput = document.getElementById('file-input');
+
+            dropZone.addEventListener('click', () => fileInput.click());
+
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            });
+
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('dragover');
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                handleFiles(e.dataTransfer.files);
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                handleFiles(e.target.files);
+            });
+        }
+
+        function handleFiles(files) {
+            if (files.length === 0) return;
+            document.getElementById('upload-queue').style.display = 'block';
+
+            Array.from(files).forEach(file => {
+                const item = {
+                    id: Date.now() + Math.random(),
+                    name: file.name,
+                    size: file.size,
+                    status: 'pending'
+                };
+                uploadQueue.push(item);
+                renderUploadQueue();
+                uploadFile(item, file);
+            });
+        }
+
+        function renderUploadQueue() {
+            const list = document.getElementById('upload-list');
+            list.innerHTML = uploadQueue.map(item => `
+                <div class="upload-item">
+                    <div class="upload-item-icon">${getExtension(item.name).toUpperCase()}</div>
+                    <div class="upload-item-info">
+                        <div class="upload-item-name">${escapeHtml(item.name)}</div>
+                        <div class="upload-item-meta">${formatSize(item.size)}</div>
+                    </div>
+                    <div class="upload-item-status ${item.status}">${getStatusText(item.status)}</div>
+                </div>
+            `).join('');
+        }
+
+        function getStatusText(status) {
+            const map = { pending: '等待中', uploading: '上传中', done: '已完成', error: '失败' };
+            return map[status] || status;
+        }
+
+        async function uploadFile(item, file) {
+            item.status = 'uploading';
+            renderUploadQueue();
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch(API + '/documents/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!response.ok) throw new Error('Upload failed');
+                const data = await response.json();
+                item.status = 'done';
+                toast(`上传成功: ${item.name}`, 'success');
+            } catch (error) {
+                item.status = 'error';
+                toast(`上传失败: ${item.name}`, 'error');
+            }
+            renderUploadQueue();
+        }
+
+        // Settings
+        async function loadSettings() {
+            try {
+                const response = await fetch(API + '/config');
+                if (!response.ok) throw new Error('Failed to load settings');
+                settingsData = await response.json();
+
+                document.getElementById('cfg-llm_model').value = settingsData.llm_model || 'qwen2.5:7b';
+                document.getElementById('cfg-temperature').value = settingsData.temperature ?? 0.7;
+                document.getElementById('cfg-max_tokens').value = settingsData.max_tokens || 2048;
+                document.getElementById('cfg-system_prompt').value = settingsData.system_prompt || '';
+                document.getElementById('cfg-search_top_k').value = settingsData.search_top_k || 5;
+                document.getElementById('cfg-search_max_depth').value = settingsData.search_max_depth || 4;
+                document.getElementById('cfg-tree_max_depth').value = settingsData.tree_max_depth || 5;
+                document.getElementById('cfg-tree_max_children').value = settingsData.tree_max_children || 10;
+                document.getElementById('cfg-max_tree_context_chars').value = settingsData.max_tree_context_chars || 20000;
+            } catch (error) {
+                toast('加载设置失败: ' + error.message, 'error');
+            }
+        }
+
+        async function saveSettings() {
+            const config = {};
+            const v = (id) => document.getElementById(id).value;
+
+            const llm = v('cfg-llm_model');
+            if (llm) config.llm_model = llm;
+
+            const temp = parseFloat(v('cfg-temperature'));
+            if (!isNaN(temp)) config.temperature = temp;
+
+            const tokens = parseInt(v('cfg-max_tokens'));
+            if (!isNaN(tokens)) config.max_tokens = tokens;
+
+            const sp = v('cfg-system_prompt');
+            if (sp !== undefined) config.system_prompt = sp;
+
+            const topk = parseInt(v('cfg-search_top_k'));
+            if (!isNaN(topk)) config.search_top_k = topk;
+
+            const depth = parseInt(v('cfg-search_max_depth'));
+            if (!isNaN(depth)) config.search_max_depth = depth;
+
+            const td = parseInt(v('cfg-tree_max_depth'));
+            if (!isNaN(td)) config.tree_max_depth = td;
+
+            const tc = parseInt(v('cfg-tree_max_children'));
+            if (!isNaN(tc)) config.tree_max_children = tc;
+
+            const mc = parseInt(v('cfg-max_tree_context_chars'));
+            if (!isNaN(mc)) config.max_tree_context_chars = mc;
+
+            try {
+                const response = await fetch(API + '/config', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+                if (!response.ok) throw new Error('保存失败');
+                toast('设置已保存', 'success');
+            } catch (error) {
+                toast('保存设置失败: ' + error.message, 'error');
+            }
+        }
+
+        // Utilities
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function formatSize(bytes) {
+            if (!bytes) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const d = new Date(dateStr);
+            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        }
+
+        function getExtension(filename) {
+            const parts = filename.split('.');
+            return parts.length > 1 ? parts.pop().toLowerCase() : '';
+        }
+
+        function toast(msg, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const el = document.createElement('div');
+            el.className = `toast ${type}`;
+            el.textContent = msg;
+            container.appendChild(el);
+            setTimeout(() => el.remove(), 3000);
+        }
+    </script>
+</body>
+</html>

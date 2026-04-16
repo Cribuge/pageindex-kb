@@ -228,3 +228,18 @@ async def batch_reprocess_documents(
         background_tasks.add_task(run_ingestion_task, doc.id, file_data, doc.title, doc.file_type)
         triggered += 1
     return {"triggered": triggered}
+
+
+@router.post("/categories/rename")
+def rename_category(old_name: str = Form(...), new_name: str = Form(...), db: Session = Depends(get_db)):
+    """
+    Rename a category: update all documents with old_name category to new_name.
+    If old_name does not exist as a category, return 404.
+    """
+    docs = db.query(Document).filter(Document.category == old_name).all()
+    if not docs and old_name != "":
+        raise HTTPException(status_code=404, detail="Category not found")
+    for doc in docs:
+        doc.category = new_name
+    db.commit()
+    return {"renamed": len(docs), "old": old_name, "new": new_name}

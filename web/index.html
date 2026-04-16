@@ -880,7 +880,7 @@
         }
         .doc-grid-header {
             display: grid;
-            grid-template-columns: 48px minmax(0, 1fr) 80px 80px 100px 160px;
+            grid-template-columns: minmax(0, 1fr) 80px 80px 100px 140px;
             align-items: center;
         }
         .doc-grid-header > div {
@@ -895,24 +895,12 @@
         }
         .doc-grid-row {
             display: grid;
-            grid-template-columns: 48px minmax(0, 1fr) 80px 80px 100px 160px;
+            grid-template-columns: minmax(0, 1fr) 80px 80px 100px 140px;
             align-items: center;
             border-bottom: 1px solid var(--border-subtle);
-            position: relative;
-            transition: background var(--transition);
-        }
-        .doc-grid-row::before {
-            content: '';
-            position: absolute;
-            left: 0; top: 0; bottom: 0;
-            width: 3px;
-            background: transparent;
             transition: background var(--transition);
         }
         .doc-grid-row:hover { background: var(--surface-hover); }
-        .doc-grid-row:hover::before { background: var(--accent); opacity: 0.4; }
-        .doc-grid-row.selected { background: var(--accent-dim); }
-        .doc-grid-row.selected::before { background: var(--accent); opacity: 1; }
         .doc-grid-row > div {
             padding: 10px 12px;
             font-size: 13px;
@@ -1430,14 +1418,6 @@
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                 文档管理
             </div>
-            <div class="nav-item" data-panel="upload">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                上传文档
-            </div>
-            <div class="nav-item" data-panel="settings">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                系统设置
-            </div>
             <div class="sidebar-footer">
                 基于 <a href="#">PageIndex</a> 构建
             </div>
@@ -1486,10 +1466,6 @@
                 </div>
                 <!-- Category level toolbar -->
                 <div class="docs-toolbar" id="cat-toolbar">
-                    <button class="btn btn-accent" onclick="openCatModal()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-                        分类管理
-                    </button>
                     <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
                         <div class="search-box" style="max-width:260px">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -1519,125 +1495,11 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                         <input type="text" id="doc-search" placeholder="搜索此分类文档..." oninput="loadDocuments()">
                     </div>
-                    <label class="btn" style="cursor:pointer">
-                        <input type="checkbox" id="select-all-docs" onchange="toggleSelectAll()" style="display:none">
-                        全选
-                    </label>
-                </div>
-                <div class="batch-bar-wrap" id="batch-bar-wrap" style="display:none">
-                    <div class="batch-bar" id="batch-bar">
-                        <span class="batch-bar-count" id="batch-count">0</span> 份文档已选择
-                        <select id="batch-cat-select" class="filter-select" style="font-size:12px;padding:5px 8px">
-                            <option value="">设为分类...</option>
-                        </select>
-                        <button class="btn btn-accent" id="batch-cat-btn" onclick="batchSetCatBar()" style="padding:5px 10px;font-size:12px">应用</button>
-                        <button class="btn btn-danger" onclick="batchDelete()">批量删除</button>
-                        <button class="btn" onclick="batchReprocess()">批量重建索引</button>
-                        <button class="btn" onclick="clearSelection()">取消选择</button>
-                    </div>
                 </div>
                 <div class="docs-list" id="docs-list"></div>
             </div>
 
-            <!-- UPLOAD -->
-            <div class="panel" id="panel-upload">
-                <div class="upload-header">
-                    <h2>上传文档</h2>
-                    <p>上传后系统将自动解析文档结构，生成层级树索引</p>
-                </div>
-                <div class="upload-area">
-                    <div class="upload-drop" id="upload-drop" onclick="document.getElementById('file-input').click()">
-                        <div class="upload-drop-inner">
-                            <div class="upload-drop-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                            </div>
-                            <h3>拖拽文件到此处，或点击选择</h3>
-                            <p>支持批量上传，单次最多 20 个文件</p>
-                            <div class="upload-formats">
-                                <span class="upload-format-tag">PDF</span>
-                                <span class="upload-format-tag">DOCX</span>
-                                <span class="upload-format-tag">TXT</span>
-                                <span class="upload-format-tag">MD</span>
-                                <span class="upload-format-tag">XLSX</span>
-                            </div>
-                        </div>
-                    </div>
-                    <input type="file" id="file-input" multiple hidden accept=".pdf,.docx,.doc,.txt,.md,.xlsx,.xls" onchange="handleFiles(this.files)">
-                    <div class="upload-queue" id="upload-queue"></div>
-                </div>
-            </div>
-
-            <!-- SETTINGS -->
-            <div class="panel" id="panel-settings">
-                <div class="settings-header">
-                    <h2>系统设置</h2>
-                    <p>配置模型参数与检索策略，修改后仅对新处理的文档生效</p>
-                </div>
-                <div class="settings-body">
-                    <div class="settings-card">
-                        <h3>模型配置</h3>
-                        <div class="settings-row">
-                            <label>LLM 模型</label>
-                            <select id="cfg-llm_model" class="settings-input">
-                                <option value="qwen2.5:7b">qwen2.5:7b</option>
-                            </select>
-                        </div>
-                        <div class="settings-row">
-                            <label>温度 (Temperature)</label>
-                            <div class="range-row">
-                                <input type="range" id="cfg-temperature-range" min="0" max="2" step="0.05" value="0.7" oninput="syncTemp(this.value)">
-                                <input type="number" id="cfg-temperature" class="settings-input small" min="0" max="2" step="0.05" value="0.7">
-                            </div>
-                        </div>
-                        <div class="settings-row">
-                            <label>最大生成长度</label>
-                            <input type="number" id="cfg-max_tokens" class="settings-input small" min="256" max="8192" step="256" value="2048">
-                        </div>
-                        <div class="settings-row" style="align-items:flex-start">
-                            <label>系统提示词</label>
-                            <textarea id="cfg-system_prompt" class="settings-input" rows="4" placeholder="留空使用默认提示词"></textarea>
-                        </div>
-                    </div>
-                    <div class="settings-card">
-                        <h3>检索配置</h3>
-                        <div class="settings-row">
-                            <label>TOP_K (返回结果数)</label>
-                            <input type="number" id="cfg-search_top_k" class="settings-input small" min="1" max="20" value="5">
-                        </div>
-                        <div class="settings-row">
-                            <label>搜索深度</label>
-                            <input type="number" id="cfg-search_max_depth" class="settings-input small" min="1" max="10" value="4">
-                        </div>
-                    </div>
-                    <div class="settings-card">
-                        <h3>树索引配置</h3>
-                        <div class="settings-row">
-                            <label>树最大深度</label>
-                            <input type="number" id="cfg-tree_max_depth" class="settings-input small" min="1" max="10" value="5">
-                        </div>
-                        <div class="settings-row">
-                            <label>最大子节点数</label>
-                            <input type="number" id="cfg-tree_max_children" class="settings-input small" min="1" max="20" value="10">
-                        </div>
-                        <div class="settings-row">
-                            <label>上下文字符阈值</label>
-                            <input type="number" id="cfg-max_tree_context_chars" class="settings-input small" min="5000" max="50000" step="1000" value="20000">
-                        </div>
-                        <div class="settings-hint">参数变更仅影响新上传或重新处理的文档</div>
-                    </div>
-                    <div class="settings-actions">
-                        <button class="btn btn-accent" onclick="saveSettings()">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                            保存设置
-                        </button>
-                        <button class="btn" onclick="loadSettings()">重置</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- TREE MODAL -->
+            <!-- TREE MODAL -->
     <div class="modal-overlay" id="tree-modal" onclick="if(event.target===this)closeTreeModal()">
         <div class="modal-content">
             <div class="modal-header">
@@ -1645,59 +1507,6 @@
                 <button class="modal-close" onclick="closeTreeModal()">✕</button>
             </div>
             <div class="modal-body" id="tree-view"></div>
-        </div>
-    </div>
-
-    <!-- CATEGORY MODAL -->
-    <div class="modal-overlay" id="cat-modal" onclick="if(event.target===this)closeCatModal()">
-        <div class="modal-content" style="max-width:480px">
-            <div class="modal-header">
-                <h2>分类管理</h2>
-                <button class="modal-close" onclick="closeCatModal()">✕</button>
-            </div>
-            <div class="modal-body">
-                <!-- 批量设置分类 -->
-                <div class="cat-batch-section">
-                    <h3>批量设置分类</h3>
-                    <div class="cat-batch-row">
-                        <select id="cat-batch-select" class="settings-input" style="max-width:none">
-                            <option value="">-- 选择已有分类 --</option>
-                        </select>
-                        <button class="btn btn-accent" onclick="batchSetCat()">设为选中文档分类</button>
-                    </div>
-                    <div class="cat-new-row">
-                        <input type="text" id="cat-new-name" class="settings-input" placeholder="输入新分类名称（可选）" style="max-width:none">
-                        <button class="btn" onclick="addCategory()">创建并应用</button>
-                    </div>
-                </div>
-                <!-- 分类列表 -->
-                <h3 class="cat-list-title">已有分类</h3>
-                <div id="cat-list"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- SINGLE DOC CAT MODAL -->
-    <div class="modal-overlay" id="doccat-modal" onclick="if(event.target===this)closeDocCatModal()">
-        <div class="modal-content" style="max-width:380px">
-            <div class="modal-header">
-                <h2>设置分类</h2>
-                <button class="modal-close" onclick="closeDocCatModal()">✕</button>
-            </div>
-            <div class="modal-body">
-                <div class="cat-batch-row">
-                    <select id="doccat-select" class="settings-input" style="max-width:none">
-                        <option value="">-- 清除分类 --</option>
-                    </select>
-                </div>
-                <div class="cat-new-row" style="margin-top:10px">
-                    <input type="text" id="doccat-new" class="settings-input" placeholder="或输入新分类名称" style="max-width:none">
-                </div>
-                <div style="margin-top:14px;display:flex;gap:8px">
-                    <button class="btn btn-accent" onclick="confirmDocCat()" style="flex:1">确认</button>
-                    <button class="btn" onclick="closeDocCatModal()">取消</button>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -1738,7 +1547,6 @@ document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.add('active');
         document.getElementById('panel-' + item.dataset.panel).classList.add('active');
         if (item.dataset.panel === 'documents') loadCatView();
-        if (item.dataset.panel === 'settings') loadSettings();
     });
 });
 
@@ -1895,11 +1703,8 @@ async function loadCatView() {
     document.getElementById('cat-toolbar').style.display = 'flex';
     document.getElementById('cat-cards-wrap').style.display = 'block';
     document.getElementById('doc-toolbar').style.display = 'none';
-    document.getElementById('batch-bar-wrap').style.display = 'none';
     document.getElementById('docs-list').innerHTML = '';
     document.getElementById('docs-list').style.display = 'none';
-    selectedDocIds.clear();
-    updateBatchBar();
 
     try {
         const r = await fetch(API + '/documents/?limit=200');
@@ -1987,11 +1792,7 @@ async function loadCatView() {
             '<option value="processing"' + (statusVal === 'processing' ? ' selected' : '') + '>处理中</option>' +
             '<option value="failed"' + (statusVal === 'failed' ? ' selected' : '') + '>失败</option>';
 
-        // Update batch category select
-        const opts = Object.keys(catCount).sort().map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
-        document.getElementById('batch-cat-select').innerHTML = '<option value="">设为分类...</option>' + opts;
-
-    } catch(e) {
+            } catch(e) {
         document.getElementById('cat-cards').innerHTML = '<div class="empty-state"><h3>加载失败</h3></div>';
     }
 }
@@ -2001,7 +1802,6 @@ function enterCat(catName) {
     document.getElementById('cat-toolbar').style.display = 'none';
     document.getElementById('cat-cards-wrap').style.display = 'none';
     document.getElementById('doc-toolbar').style.display = 'flex';
-    document.getElementById('batch-bar-wrap').style.display = 'block';
     document.getElementById('docs-list').style.display = 'flex';
     document.getElementById('cat-name-title').textContent = catName === null ? '全部文档' : catName;
     document.getElementById('doc-search').value = '';
@@ -2028,7 +1828,6 @@ async function searchAllDocs() {
         const container = document.getElementById('docs-list');
         document.getElementById('cat-cards-wrap').style.display = 'none';
         document.getElementById('doc-toolbar').style.display = 'flex';
-        document.getElementById('batch-bar-wrap').style.display = 'block';
         document.getElementById('docs-list').style.display = 'flex';
         document.getElementById('cat-name-title').textContent = search ? '搜索结果' : '全部文档';
         currentCatView = null; // mark as all docs mode
@@ -2087,7 +1886,6 @@ function renderDocList(items) {
     let html = '<div class="doc-grid">';
     // Header
     html += '<div class="doc-grid-header">';
-    html += '<div class="doc-grid-check"><input type="checkbox" id="select-all-table" onchange="toggleSelectAll()" style="cursor:pointer"></div>';
     html += '<div>文档名称</div>';
     html += '<div class="doc-grid-type">格式</div>';
     html += '<div class="doc-grid-size">大小</div>';
@@ -2102,50 +1900,19 @@ function renderDocList(items) {
             (doc.file_type === 'docx' || doc.file_type === 'doc') ? '<span class="doc-type-icon" style="color:#6d9fff">' + icons.file + ' DOC</span>' :
             '<span class="doc-type-icon">' + icons.file + ' ' + (doc.file_type || '-').toUpperCase() + '</span>';
         const size = doc.file_size > 1048576 ? (doc.file_size/1048576).toFixed(1)+' MB' : (doc.file_size/1024).toFixed(0)+' KB';
-        const sel = selectedDocIds.has(doc.id);
-        html += '<div class="doc-grid-row' + (sel ? ' selected' : '') + '" data-id="' + doc.id + '" onclick="toggleDocSelect(\'' + doc.id + '\', event)">';
-        html += '<div class="doc-grid-check"><div class="doc-checkbox' + (sel ? ' checked' : '') + '" onclick="event.stopPropagation(); toggleDocSelect(\'' + doc.id + '\')"></div></div>';
+        html += '<div class="doc-grid-row" data-id="' + doc.id + '">';
         html += '<div class="doc-grid-title"><h3 title="' + escapeHtml(doc.title) + '"><span class="doc-status-dot ' + statusDot + '"></span>' + escapeHtml(doc.title) + '</h3></div>';
         html += '<div class="doc-grid-type">' + typeIcon + '</div>';
         html += '<div class="doc-grid-size">' + size + '</div>';
         html += '<div class="doc-grid-date">' + new Date(doc.created_at).toLocaleDateString('zh-CN') + '</div>';
-        html += '<div class="doc-grid-actions" onclick="event.stopPropagation()">';
-        html += '<button class="btn" onclick="openDocCatModal(\'' + doc.id + '\', \'' + escapeHtml(doc.category || '') + '\')" title="设置分类"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></button>';
-        html += '<button class="btn" onclick="renameDoc(\'' + doc.id + '\', \'' + escapeHtml(doc.title.replace(/'/g, "\\'")) + '\')" title="重命名"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>';
+        html += '<div class="doc-grid-actions">';
         if (doc.status === 'indexed') {
-            html += '<button class="btn" onclick="viewTree(\'' + doc.id + '\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></button>';
+            html += '<button class="btn" onclick="viewTree(\'' + doc.id + '\')" title="查看树索引"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></button>';
         }
-        html += '<button class="btn btn-danger" onclick="deleteDoc(\'' + doc.id + '\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>';
         html += '</div></div>';
     });
     html += '</div>';
     container.innerHTML = html;
-}
-
-async function deleteDoc(id) {
-    if (!confirm('确定要删除这份文档吗？此操作不可撤销。')) return;
-    await fetch(API + '/documents/' + id, { method: 'DELETE' });
-    toast('文档已删除');
-    if (currentCatView !== null) {
-        loadDocuments();
-    } else {
-        loadCatView();
-    }
-    loadStats();
-}
-
-async function renameDoc(id, currentName) {
-    const newName = prompt('请输入文档新名称：', currentName);
-    if (!newName || newName === currentName) return;
-    try {
-        const formData = new FormData();
-        formData.append('title', newName);
-        await fetch(API + '/documents/' + id, { method: 'PUT', body: formData });
-        toast('文档已重命名');
-        loadDocuments();
-    } catch(e) {
-        toast('重命名失败', 'error');
-    }
 }
 
 async function viewTree(docId) {
@@ -2184,486 +1951,6 @@ function closeTreeModal() {
 }
 
 // Batch selection
-let selectedDocIds = new Set();
-
-function toggleDocSelect(id, event) {
-    if (selectedDocIds.has(id)) {
-        selectedDocIds.delete(id);
-    } else {
-        selectedDocIds.add(id);
-    }
-    updateBatchBar();
-    renderDocSelection();
-}
-
-function renderDocSelection() {
-    // Handle card-style rows
-    document.querySelectorAll('.doc-card').forEach(card => {
-        const id = card.dataset.id;
-        const sel = selectedDocIds.has(id);
-        card.classList.toggle('selected', sel);
-        const cb = card.querySelector('.doc-checkbox');
-        if (cb) cb.classList.toggle('checked', sel);
-    });
-    // Handle table rows
-    document.querySelectorAll('.doc-grid-row').forEach(row => {
-        const id = row.dataset.id;
-        const sel = selectedDocIds.has(id);
-        row.classList.toggle('selected', sel);
-        const cb = row.querySelector('.doc-checkbox');
-        if (cb) cb.classList.toggle('checked', sel);
-    });
-    // Sync header checkbox
-    const totalCards = document.querySelectorAll('.doc-card').length;
-    const totalRows = document.querySelectorAll('.doc-grid-row').length;
-    const total = totalCards + totalRows;
-    const allChecked = total > 0 && selectedDocIds.size === total;
-    const headerCb = document.getElementById('select-all-docs') || document.getElementById('select-all-table');
-    if (headerCb) headerCb.checked = allChecked;
-}
-
-function toggleSelectAll() {
-    const headerCb = document.getElementById('select-all-docs') || document.getElementById('select-all-table');
-    if (selectedDocIds.size > 0) {
-        selectedDocIds.clear();
-    } else {
-        document.querySelectorAll('.doc-card').forEach(card => selectedDocIds.add(card.dataset.id));
-        document.querySelectorAll('.doc-grid-row').forEach(row => selectedDocIds.add(row.dataset.id));
-    }
-    updateBatchBar();
-    renderDocSelection();
-}
-
-function updateBatchBar() {
-    const bar = document.getElementById('batch-bar');
-    const wrap = document.getElementById('batch-bar-wrap');
-    const count = document.getElementById('batch-count');
-    const prevCount = parseInt(count.textContent) || 0;
-    const newCount = selectedDocIds.size;
-    count.textContent = newCount;
-    const hasSelection = newCount > 0;
-    const appearing = !hasSelection || prevCount === 0;
-    if (wrap) {
-        wrap.classList.toggle('visible', hasSelection);
-        if (hasSelection && appearing) {
-            wrap.style.animation = 'slideDown 0.2s ease-out';
-        }
-    }
-    if (bar) {
-        bar.classList.toggle('visible', hasSelection);
-    }
-}
-
-function clearSelection() {
-    selectedDocIds.clear();
-    updateBatchBar();
-    renderDocSelection();
-}
-
-async function batchDelete() {
-    if (selectedDocIds.size === 0) return;
-    if (!confirm('确定要删除选中的 ' + selectedDocIds.size + ' 份文档吗？此操作不可撤销。')) return;
-    const ids = Array.from(selectedDocIds);
-    await fetch(API + '/documents/batch-delete', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ids})
-    });
-    toast('已删除 ' + ids.length + ' 份文档');
-    selectedDocIds.clear();
-    updateBatchBar();
-    loadCatView();
-    loadStats();
-}
-
-async function batchReprocess() {
-    if (selectedDocIds.size === 0) return;
-    const ids = Array.from(selectedDocIds);
-    await fetch(API + '/documents/batch-reprocess', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ids})
-    });
-    toast('已提交 ' + ids.length + ' 份文档进行重建索引');
-    selectedDocIds.clear();
-    updateBatchBar();
-    loadCatView();
-}
-
-// Settings
-async function loadSettings() {
-    try {
-        const r = await fetch(API + '/config');
-        const cfg = await r.json();
-        document.getElementById('cfg-llm_model').value = cfg.llm_model || 'qwen2.5:7b';
-        document.getElementById('cfg-temperature').value = cfg.temperature;
-        document.getElementById('cfg-temperature-range').value = cfg.temperature;
-        document.getElementById('cfg-max_tokens').value = cfg.max_tokens;
-        document.getElementById('cfg-system_prompt').value = cfg.system_prompt || '';
-        document.getElementById('cfg-search_top_k').value = cfg.search_top_k;
-        document.getElementById('cfg-search_max_depth').value = cfg.search_max_depth;
-        document.getElementById('cfg-tree_max_depth').value = cfg.tree_max_depth;
-        document.getElementById('cfg-tree_max_children').value = cfg.tree_max_children;
-        document.getElementById('cfg-max_tree_context_chars').value = cfg.max_tree_context_chars;
-    } catch(e) {
-        toast('加载配置失败', 'error');
-    }
-}
-
-function syncTemp(val) {
-    document.getElementById('cfg-temperature').value = val;
-}
-
-async function saveSettings() {
-    const body = {};
-    const llm_model = document.getElementById('cfg-llm_model').value;
-    const temperature = parseFloat(document.getElementById('cfg-temperature').value);
-    const max_tokens = parseInt(document.getElementById('cfg-max_tokens').value);
-    const system_prompt = document.getElementById('cfg-system_prompt').value;
-    const search_top_k = parseInt(document.getElementById('cfg-search_top_k').value);
-    const search_max_depth = parseInt(document.getElementById('cfg-search_max_depth').value);
-    const tree_max_depth = parseInt(document.getElementById('cfg-tree_max_depth').value);
-    const tree_max_children = parseInt(document.getElementById('cfg-tree_max_children').value);
-    const max_tree_context_chars = parseInt(document.getElementById('cfg-max_tree_context_chars').value);
-    if (llm_model) body.llm_model = llm_model;
-    if (!isNaN(temperature)) body.temperature = temperature;
-    if (!isNaN(max_tokens)) body.max_tokens = max_tokens;
-    if (system_prompt !== undefined) body.system_prompt = system_prompt;
-    if (!isNaN(search_top_k)) body.search_top_k = search_top_k;
-    if (!isNaN(search_max_depth)) body.search_max_depth = search_max_depth;
-    if (!isNaN(tree_max_depth)) body.tree_max_depth = tree_max_depth;
-    if (!isNaN(tree_max_children)) body.tree_max_children = tree_max_children;
-    if (!isNaN(max_tree_context_chars)) body.max_tree_context_chars = max_tree_context_chars;
-    try {
-        const r = await fetch(API + '/config', {
-            method: 'PUT',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(body)
-        });
-        if (r.ok) {
-            toast('设置已保存');
-        } else {
-            toast('保存失败', 'error');
-        }
-    } catch(e) {
-        toast('保存失败：' + e.message, 'error');
-    }
-}
-
-// Category management
-let allCategories = [];
-
-async function openCatModal() {
-    await loadAllCategories();
-    document.getElementById('cat-modal').classList.add('show');
-}
-
-function closeCatModal() {
-    document.getElementById('cat-modal').classList.remove('show');
-}
-
-async function loadAllCategories() {
-    try {
-        const r = await fetch(API + '/documents/?limit=200');
-        const d = await r.json();
-        const catCount = {};
-        d.items.forEach(doc => {
-            if (doc.category) {
-                catCount[doc.category] = (catCount[doc.category] || 0) + 1;
-            }
-        });
-        allCategories = Object.entries(catCount).sort((a, b) => a[0].localeCompare(b[0]));
-        // 更新所有分类下拉框
-        const opts = allCategories.map(([name]) =>
-            `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`
-        ).join('');
-        document.getElementById('cat-batch-select').innerHTML =
-            '<option value="">-- 选择已有分类 --</option>' + opts;
-        document.getElementById('doccat-select').innerHTML =
-            '<option value="">-- 清除分类 --</option>' + opts;
-        document.getElementById('batch-cat-select').innerHTML =
-            '<option value="">设为分类...</option>' + opts;
-        renderCatList();
-    } catch(e) {
-        toast('加载分类失败', 'error');
-    }
-}
-
-function renderCatList() {
-    const list = document.getElementById('cat-list');
-    if (allCategories.length === 0) {
-        list.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:13px;padding:16px">暂无分类</div>';
-        return;
-    }
-    list.innerHTML = allCategories.map(([name, count]) => `
-        <div class="cat-item">
-            <span class="cat-item-name">${escapeHtml(name)}</span>
-            <span class="cat-item-count">${count} 份文档</span>
-            <div class="cat-item-actions">
-                <button class="btn" onclick="renameCategory('${escapeHtml(name)}')">重命名</button>
-                <button class="btn btn-danger" onclick="deleteCategory('${escapeHtml(name)}')">删除</button>
-            </div>
-        </div>
-    `).join('');
-}
-
-async function addCategory() {
-    const input = document.getElementById('cat-new-name');
-    const name = input.value.trim();
-    if (!name) {
-        toast('请输入新分类名称', '');
-        return;
-    }
-    if (selectedDocIds.size === 0) {
-        toast('请先在文档列表中选择要设置分类的文档', '');
-        return;
-    }
-    try {
-        let updated = 0;
-        for (const docId of selectedDocIds) {
-            const formData = new FormData();
-            formData.append('category', name);
-            await fetch(API + '/documents/' + docId, {
-                method: 'PUT',
-                body: formData
-            });
-            updated++;
-        }
-        toast('已将 ' + updated + ' 份文档设为分类 "' + name + '"');
-        input.value = '';
-        selectedDocIds.clear();
-        updateBatchBar();
-        loadDocuments();
-        loadAllCategories();
-    } catch(e) {
-        toast('设置分类失败', 'error');
-    }
-}
-
-async function batchSetCatBar() {
-    const sel = document.getElementById('batch-cat-select');
-    const catName = sel.value;
-    if (!catName) {
-        toast('请先选择分类', '');
-        return;
-    }
-    if (selectedDocIds.size === 0) {
-        toast('请先选择文档', '');
-        return;
-    }
-    try {
-        let updated = 0;
-        for (const docId of selectedDocIds) {
-            const formData = new FormData();
-            formData.append('category', catName);
-            await fetch(API + '/documents/' + docId, {
-                method: 'PUT',
-                body: formData
-            });
-            updated++;
-        }
-        toast('已将 ' + updated + ' 份文档设为分类 "' + catName + '"');
-        selectedDocIds.clear();
-        updateBatchBar();
-        loadDocuments();
-        loadAllCategories();
-    } catch(e) {
-        toast('设置分类失败', 'error');
-    }
-}
-
-async function batchSetCat() {
-    const sel = document.getElementById('cat-batch-select');
-    const catName = sel.value;
-    if (!catName) {
-        toast('请从下拉列表选择一个已有分类', '');
-        return;
-    }
-    if (selectedDocIds.size === 0) {
-        toast('请先在文档列表中选择要设置分类的文档', '');
-        return;
-    }
-    try {
-        let updated = 0;
-        for (const docId of selectedDocIds) {
-            const formData = new FormData();
-            formData.append('category', catName);
-            await fetch(API + '/documents/' + docId, {
-                method: 'PUT',
-                body: formData
-            });
-            updated++;
-        }
-        toast('已将 ' + updated + ' 份文档设为分类 "' + catName + '"');
-        selectedDocIds.clear();
-        updateBatchBar();
-        loadDocuments();
-        loadAllCategories();
-    } catch(e) {
-        toast('设置分类失败', 'error');
-    }
-}
-
-async function renameCategory(oldName) {
-    const newName = prompt('将分类 "' + oldName + '" 重命名为：', oldName);
-    if (!newName || newName === oldName) return;
-    // Rename all docs with this category
-    try {
-        const r = await fetch(API + '/documents/?category=' + encodeURIComponent(oldName) + '&limit=200');
-        const d = await r.json();
-        let updated = 0;
-        for (const doc of d.items) {
-            const formData = new FormData();
-            formData.append('title', doc.title);
-            formData.append('category', newName);
-            await fetch(API + '/documents/' + doc.id, {
-                method: 'PUT',
-                body: formData
-            });
-            updated++;
-        }
-        toast('已将 ' + updated + ' 份文档的分类改为 "' + newName + '"');
-        await loadAllCategories();
-        loadCatView();
-    } catch(e) {
-        toast('重命名失败', 'error');
-    }
-}
-
-async function deleteCategory(catName) {
-    if (!confirm('删除分类 "' + catName + '"？文档本身不会被删除，只是移除分类标签。')) return;
-    try {
-        const r = await fetch(API + '/documents/?category=' + encodeURIComponent(catName) + '&limit=200');
-        const d = await r.json();
-        let updated = 0;
-        for (const doc of d.items) {
-            const formData = new FormData();
-            formData.append('title', doc.title);
-            formData.append('clear_category', 'true');
-            await fetch(API + '/documents/' + doc.id, {
-                method: 'PUT',
-                body: formData
-            });
-            updated++;
-        }
-        toast('已移除 ' + updated + ' 份文档的分类');
-        await loadAllCategories();
-        loadCatView();
-    } catch(e) {
-        toast('删除分类失败', 'error');
-    }
-}
-
-let docCatTargetId = null;
-
-function openDocCatModal(docId, currentCat) {
-    docCatTargetId = docId;
-    const sel = document.getElementById('doccat-select');
-    const newInput = document.getElementById('doccat-new');
-    newInput.value = '';
-    // 选中当前分类
-    const opts = sel.options;
-    for (let i = 0; i < opts.length; i++) {
-        if (opts[i].value === currentCat) {
-            sel.selectedIndex = i;
-            break;
-        }
-    }
-    document.getElementById('doccat-modal').classList.add('show');
-}
-
-function closeDocCatModal() {
-    document.getElementById('doccat-modal').classList.remove('show');
-    docCatTargetId = null;
-}
-
-async function confirmDocCat() {
-    if (!docCatTargetId) return;
-    const sel = document.getElementById('doccat-select');
-    const newInput = document.getElementById('doccat-new');
-    const catName = newInput.value.trim();
-
-    try {
-        const formData = new FormData();
-        if (catName) {
-            formData.append('category', catName);
-        } else if (sel.value) {
-            formData.append('category', sel.value);
-        } else {
-            formData.append('clear_category', 'true');
-        }
-        await fetch(API + '/documents/' + docCatTargetId, {
-            method: 'PUT',
-            body: formData
-        });
-        toast('分类已更新');
-        closeDocCatModal();
-        loadCatView();
-        loadDocuments();
-        loadAllCategories();
-    } catch(e) {
-        toast('设置分类失败', 'error');
-    }
-}
-
-// Upload
-const dropZone = document.getElementById('upload-drop');
-dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-dropZone.addEventListener('drop', e => {
-    e.preventDefault();
-    dropZone.classList.remove('dragover');
-    handleFiles(e.dataTransfer.files);
-});
-
-async function handleFiles(files) {
-    if (!files.length) return;
-    const queue = document.getElementById('upload-queue');
-
-    for (const file of files) {
-        const itemId = 'up-' + Math.random().toString(36).slice(2);
-        queue.innerHTML += `<div class="upload-item" id="${itemId}">
-            <div class="upload-item-left">
-                <div class="upload-item-icon">${icons.file}</div>
-                <span class="upload-item-name">${escapeHtml(file.name)}</span>
-            </div>
-            <span class="upload-status" style="color:var(--amber)">上传中…</span>
-        </div>`;
-
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('title', file.name);
-
-        try {
-            const r = await fetch(API + '/documents/upload', { method: 'POST', body: formData });
-            const statusEl = document.querySelector('#' + itemId + ' .upload-status');
-            if (r.ok) {
-                statusEl.textContent = '已加入队列';
-                statusEl.style.color = 'var(--green)';
-            } else if (r.status === 413) {
-                statusEl.textContent = '文件过大（最大100MB）';
-                statusEl.style.color = 'var(--red)';
-            } else if (r.status === 400) {
-                const err = await r.json().catch(() => ({}));
-                statusEl.textContent = err.detail || '不支持该文件格式';
-                statusEl.style.color = 'var(--red)';
-            } else if (r.status >= 500) {
-                statusEl.textContent = '服务器错误，请稍后重试';
-                statusEl.style.color = 'var(--red)';
-            } else {
-                const err = await r.json().catch(() => ({}));
-                statusEl.textContent = err.detail || '上传失败';
-                statusEl.style.color = 'var(--red)';
-            }
-        } catch(e) {
-            const statusEl = document.querySelector('#' + itemId + ' .upload-status');
-            statusEl.textContent = '网络连接失败';
-            statusEl.style.color = 'var(--red)';
-        }
-    }
-    loadStats();
-    loadCatView();
-}
 </script>
 </body>
 </html>
