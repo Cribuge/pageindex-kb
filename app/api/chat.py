@@ -177,6 +177,22 @@ async def delete_session(session_id: uuid.UUID, db: Session = Depends(get_db)):
 
 
 @router.get("/models")
-async def list_models():
+async def list_models(
+    openai_base: str = None,
+    openai_key: str = None,
+):
+    """List available models. If openai_base/key provided, use OpenAI endpoint."""
+    if openai_base and openai_key:
+        original_provider = llm_service.provider
+        original_base = llm_service.openai_base
+        original_key = llm_service.openai_key
+        llm_service.provider = "openai"
+        llm_service.openai_base = openai_base
+        llm_service.openai_key = openai_key
+        models = await llm_service.list_models()
+        llm_service.provider = original_provider
+        llm_service.openai_base = original_base
+        llm_service.openai_key = original_key
+        return {"models": models}
     models = await llm_service.list_models()
     return {"models": models}

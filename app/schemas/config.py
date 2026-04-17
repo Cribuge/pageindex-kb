@@ -2,7 +2,6 @@
 Pydantic schemas for system config API.
 """
 from typing import Optional
-
 from pydantic import BaseModel
 
 
@@ -16,6 +15,9 @@ class ConfigUpdate(BaseModel):
     tree_max_depth: Optional[int] = None
     tree_max_children: Optional[int] = None
     max_tree_context_chars: Optional[int] = None
+    llm_provider: Optional[str] = None
+    openai_api_base: Optional[str] = None
+    openai_api_key: Optional[str] = None
 
 
 class ConfigResponse(BaseModel):
@@ -28,3 +30,6 @@ class ConfigResponse(BaseModel):
     tree_max_depth: int = 5
     tree_max_children: int = 10
     max_tree_context_chars: int = 20000
+    llm_provider: str = "ollama"
+    openai_api_base: str = "https://api.openai.com/v1"
+    openai_api_key: str = ""

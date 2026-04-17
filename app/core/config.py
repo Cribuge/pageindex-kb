@@ -16,6 +16,11 @@ class Settings(BaseSettings):
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     LLM_MODEL: str = "qwen2.5:7b"
 
+    # LLM Provider
+    LLMProvider: str = "ollama"          # ollama | openai
+    OpenAI_API_Base: str = "https://api.openai.com/v1"
+    OpenAI_API_Key: str = ""
+
     # Storage
     UPLOAD_DIR: str = "./uploads"
 
