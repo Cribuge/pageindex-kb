@@ -303,17 +303,16 @@ class LLMService:
             logger.warning("[list_anthropic_models] No API key configured")
             return []
 
+        url = f"{self.anthropic_base.rstrip('/')}/v1/models"
+        logger.info(f"[list_anthropic_models] GET {url}")
         try:
             headers = {
                 "x-api-key": self.anthropic_key,
                 "anthropic-version": "2023-06-01",
             }
             async with httpx.AsyncClient(timeout=10.0) as client:
-                response = await client.get(
-                    f"{self.anthropic_base}/v1/models",
-                    headers=headers,
-                )
-                logger.info(f"[list_anthropic_models] GET /v1/models -> {response.status_code}")
+                response = await client.get(url, headers=headers)
+                logger.info(f"[list_anthropic_models] -> {response.status_code}, body: {response.text[:300]}")
                 if response.status_code == 200:
                     data = response.json()
                     result = [{"name": m["id"], "id": m["id"]} for m in data.get("data", [])]
@@ -322,7 +321,7 @@ class LLMService:
                 logger.warning(f"[list_anthropic_models] {response.status_code}: {response.text[:200]}")
                 return []
         except Exception as e:
-            logger.error(f"[list_anthropic_models] failed: {e}")
+            logger.error(f"[list_anthropic_models] {url} failed: {e}")
             return []
 
     async def list_openai_models(self, models_url: str = None) -> List[dict]:
