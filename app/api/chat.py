@@ -190,6 +190,9 @@ async def list_models(
         models_url: Custom models list URL (e.g. /v1/models or full https://...),
                     defaults to {base}/v1/models then {base}/models
     """
+    import logging
+    logger = logging.getLogger(__name__)
+
     if openai_base and openai_key:
         original_provider = llm_service.provider
         original_base = llm_service.openai_base
@@ -197,7 +200,9 @@ async def list_models(
         llm_service.provider = "openai"
         llm_service.openai_base = openai_base
         llm_service.openai_key = openai_key
+        logger.info(f"[list_models] Using OpenAI: base={openai_base}, models_url={models_url}")
         models = await llm_service.list_models(models_url)
+        logger.info(f"[list_models] OpenAI returned {len(models)} models: {[m['id'] for m in models]}")
         llm_service.provider = original_provider
         llm_service.openai_base = original_base
         llm_service.openai_key = original_key

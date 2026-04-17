@@ -212,31 +212,41 @@ class LLMService:
         Otherwise fall back to {base}/v1/models then {base}/models.
         """
         import logging
+        import urllib.parse
         logger = logging.getLogger(__name__)
 
         if not self.openai_key:
+            logger.warning("[list_openai_models] No API key configured")
             return []
 
         # Determine URL to call
         if models_url:
-            url = models_url if models_url.startswith("http") else f"{self.openai_base.rstrip('/')}/{models_url.lstrip('/')}"
+            if models_url.startswith("http"):
+                url = models_url
+            else:
+                url = f"{self.openai_base.rstrip('/')}/{models_url.lstrip('/')}"
         else:
             # Try common endpoints
+            tried = []
             for endpoint in ["/v1/models", "/models"]:
                 url = f"{self.openai_base.rstrip('/')}{endpoint}"
+                tried.append(url)
                 try:
                     headers = {"Authorization": f"Bearer {self.openai_key}"}
                     async with httpx.AsyncClient(timeout=10.0) as client:
                         response = await client.get(url, headers=headers)
+                        logger.info(f"[list_openai_models] GET {url} -> {response.status_code}")
                         if response.status_code == 200:
                             data = response.json()
-                            # Support {data: [...]} or [...] format
                             models_data = data.get("data", data) if isinstance(data, dict) else data
-                            return [{"name": m["id"], "id": m["id"]} for m in models_data if isinstance(m, dict)]
-                        logger.warning(f"list_openai_models: {url} returned {response.status_code}")
+                            result = [{"name": m["id"], "id": m["id"]} for m in models_data if isinstance(m, dict)]
+                            logger.info(f"[list_openai_models] Found {len(result)} models from {url}: {[m['id'] for m in result]}")
+                            return result
+                        logger.warning(f"[list_openai_models] {url} returned {response.status_code}: {response.text[:200]}")
                 except Exception as e:
-                    logger.warning(f"list_openai_models: {url} failed: {e}")
+                    logger.warning(f"[list_openai_models] {url} failed: {e}")
                     continue
+            logger.warning(f"[list_openai_models] All endpoints failed, tried: {tried}")
             return []
 
         # Direct URL provided
@@ -244,12 +254,15 @@ class LLMService:
             headers = {"Authorization": f"Bearer {self.openai_key}"}
             async with httpx.AsyncClient(timeout=10.0) as client:
                 response = await client.get(url, headers=headers)
+                logger.info(f"[list_openai_models] GET {url} -> {response.status_code}")
                 response.raise_for_status()
                 data = response.json()
                 models_data = data.get("data", data) if isinstance(data, dict) else data
-                return [{"name": m["id"], "id": m["id"]} for m in models_data if isinstance(m, dict)]
+                result = [{"name": m["id"], "id": m["id"]} for m in models_data if isinstance(m, dict)]
+                logger.info(f"[list_openai_models] Found {len(result)} models from direct URL: {[m['id'] for m in result]}")
+                return result
         except Exception as e:
-            logger.error(f"list_openai_models: {url} failed: {e}")
+            logger.error(f"[list_openai_models] {url} failed: {e}")
             return []
 
     async def check_health(self) -> bool:
