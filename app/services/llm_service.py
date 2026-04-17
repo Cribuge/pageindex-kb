@@ -312,7 +312,7 @@ class LLMService:
             }
             async with httpx.AsyncClient(timeout=10.0) as client:
                 response = await client.get(url, headers=headers)
-                logger.info(f"[list_anthropic_models] -> {response.status_code}, body: {response.text[:300]}")
+                logger.info(f"[list_anthropic_models] -> {response.status_code}, body: {response.text[:500]}")
                 if response.status_code == 200:
                     data = response.json()
                     result = [{"name": m["id"], "id": m["id"]} for m in data.get("data", [])]
