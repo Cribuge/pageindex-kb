@@ -37,6 +37,9 @@ class RAGService:
             "temperature": 0.7,
             "max_tokens": 2048,
             "system_prompt": DEFAULT_SYSTEM_PROMPT,
+            "llm_provider": settings.LLMProvider,
+            "openai_api_base": settings.OpenAI_API_Base,
+            "openai_api_key": settings.OpenAI_API_Key,
         }
 
         result = {}

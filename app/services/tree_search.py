@@ -68,6 +68,9 @@ class TreeSearch:
         defaults = {
             "search_top_k": settings.SEARCH_TOP_K,
             "search_max_depth": settings.SEARCH_MAX_DEPTH,
+            "llm_provider": settings.LLMProvider,
+            "openai_api_base": settings.OpenAI_API_Base,
+            "openai_api_key": settings.OpenAI_API_Key,
         }
         result = {}
         for key in defaults:
