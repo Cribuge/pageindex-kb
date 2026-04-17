@@ -1014,7 +1014,12 @@
                                 <label>API Key</label>
                                 <input type="password" id="cfg-openai_api_key" placeholder="sk-...">
                             </div>
+                            <div class="form-group">
+                                <label>模型列表端点（留空则自动尝试 /v1/models）</label>
+                                <input type="text" id="cfg-openai_api_models_url" placeholder="如 /v1/models 或直接输入完整URL">
+                            </div>
                             <button type="button" class="btn btn-secondary" onclick="loadOpenAIModels()" style="margin-bottom:8px">加载模型列表</button>
+                            <div id="openai-models-status" style="font-size:12px;color:var(--text-muted);margin-bottom:8px"></div>
                         </div>
 
                         <div class="form-group">
@@ -1778,26 +1783,38 @@
         async function loadOpenAIModels() {
             const base = document.getElementById('cfg-openai_api_base').value;
             const key = document.getElementById('cfg-openai_api_key').value;
+            const modelsUrl = document.getElementById('cfg-openai_api_models_url').value;
+            const statusEl = document.getElementById('openai-models-status');
             if (!base || !key) {
                 toast('请先填写 API Base URL 和 API Key', 'error');
                 return;
             }
+            if (statusEl) statusEl.textContent = '加载中...';
             try {
-                const res = await fetch(API + '/chat/models?' + new URLSearchParams({
-                    openai_base: base,
-                    openai_key: key,
-                }));
+                const params = { openai_base: base, openai_key: key };
+                if (modelsUrl) params.models_url = modelsUrl;
+                const res = await fetch(API + '/chat/models?' + new URLSearchParams(params));
                 const data = await res.json();
                 const select = document.getElementById('cfg-llm_model');
                 select.options.length = 0;
-                (data.models || []).forEach(m => {
+                if (!data.models || data.models.length === 0) {
+                    const opt = document.createElement('option');
+                    opt.value = '';
+                    opt.textContent = '-- 未找到模型，请检查端点设置 --';
+                    select.appendChild(opt);
+                    if (statusEl) statusEl.textContent = '模型列表为空，请检查 API Key 和端点是否正确';
+                    return;
+                }
+                data.models.forEach(m => {
                     const opt = document.createElement('option');
                     opt.value = m.id || m.name;
                     opt.textContent = m.id || m.name;
                     select.appendChild(opt);
                 });
-                toast('模型列表加载成功', 'success');
+                if (statusEl) statusEl.textContent = `已加载 ${data.models.length} 个模型`;
+                toast(`模型列表加载成功 (${data.models.length}个)`, 'success');
             } catch (e) {
+                if (statusEl) statusEl.textContent = '加载失败: ' + e.message;
                 toast('加载模型列表失败: ' + e.message, 'error');
             }
         }
@@ -1820,6 +1837,7 @@
                 document.getElementById('cfg-ollama_base').value = settingsData.ollama_base || 'http://localhost:11434';
                 document.getElementById('cfg-openai_api_base').value = settingsData.openai_api_base || '';
                 document.getElementById('cfg-openai_api_key').value = settingsData.openai_api_key || '';
+                document.getElementById('cfg-openai_api_models_url').value = settingsData.openai_api_models_url || '';
 
                 // Model - load based on provider
                 const savedModel = settingsData.llm_model || '';
@@ -1888,6 +1906,11 @@
                 if (ob) config.openai_api_base = ob;
                 const ok = v('cfg-openai_api_key');
                 if (ok) config.openai_api_key = ok;
+                const mu = v('cfg-openai_api_models_url');
+                if (mu) config.openai_api_models_url = mu;
+            } else {
+                const lb = v('cfg-ollama_base');
+                if (lb) config.ollama_base = lb;
             }
 
             try {

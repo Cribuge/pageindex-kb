@@ -18,6 +18,8 @@ class ConfigUpdate(BaseModel):
     llm_provider: Optional[str] = None
     openai_api_base: Optional[str] = None
     openai_api_key: Optional[str] = None
+    openai_api_models_url: Optional[str] = None
+    ollama_base: Optional[str] = None
 
 
 class ConfigResponse(BaseModel):
@@ -33,3 +35,5 @@ class ConfigResponse(BaseModel):
     llm_provider: str = "ollama"
     openai_api_base: str = "https://api.openai.com/v1"
     openai_api_key: str = ""
+    openai_api_models_url: str = ""
+    ollama_base: str = "http://localhost:11434"

@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     LLMProvider: str = "ollama"          # ollama | openai
     OpenAI_API_Base: str = "https://api.openai.com/v1"
     OpenAI_API_Key: str = ""
+    OpenAI_API_Models_URL: str = ""  # 默认空，使用 {base}/v1/models
 
     # Storage
     UPLOAD_DIR: str = "./uploads"

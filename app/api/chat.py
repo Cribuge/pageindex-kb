@@ -180,8 +180,16 @@ async def delete_session(session_id: uuid.UUID, db: Session = Depends(get_db)):
 async def list_models(
     openai_base: str = None,
     openai_key: str = None,
+    models_url: str = None,
 ):
-    """List available models. If openai_base/key provided, use OpenAI endpoint."""
+    """List available models. If openai_base/key provided, use OpenAI endpoint.
+
+    Args:
+        openai_base: Override the API base URL
+        openai_key: Override the API key
+        models_url: Custom models list URL (e.g. /v1/models or full https://...),
+                    defaults to {base}/v1/models then {base}/models
+    """
     if openai_base and openai_key:
         original_provider = llm_service.provider
         original_base = llm_service.openai_base
@@ -189,7 +197,7 @@ async def list_models(
         llm_service.provider = "openai"
         llm_service.openai_base = openai_base
         llm_service.openai_key = openai_key
-        models = await llm_service.list_models()
+        models = await llm_service.list_models(models_url)
         llm_service.provider = original_provider
         llm_service.openai_base = original_base
         llm_service.openai_key = original_key
