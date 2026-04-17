@@ -20,6 +20,8 @@ class ConfigUpdate(BaseModel):
     openai_api_key: Optional[str] = None
     openai_api_models_url: Optional[str] = None
     ollama_base: Optional[str] = None
+    anthropic_api_base: Optional[str] = None
+    anthropic_api_key: Optional[str] = None
 
 
 class ConfigResponse(BaseModel):
@@ -37,3 +39,5 @@ class ConfigResponse(BaseModel):
     openai_api_key: str = ""
     openai_api_models_url: str = ""
     ollama_base: str = "http://localhost:11434"
+    anthropic_api_base: str = "https://api.anthropic.com"
+    anthropic_api_key: str = ""

@@ -71,6 +71,8 @@ class TreeSearch:
             "llm_provider": settings.LLMProvider,
             "openai_api_base": settings.OpenAI_API_Base,
             "openai_api_key": settings.OpenAI_API_Key,
+            "anthropic_api_base": settings.Anthropic_API_Base,
+            "anthropic_api_key": settings.Anthropic_API_Key,
         }
         result = {}
         for key in defaults:

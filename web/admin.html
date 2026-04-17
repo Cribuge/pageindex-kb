@@ -997,6 +997,10 @@
                                     <input type="radio" name="llm_provider" value="openai" id="prov-openai" onchange="switchProvider('openai')">
                                     <span>OpenAI 兼容</span>
                                 </label>
+                                <label class="provider-tab">
+                                    <input type="radio" name="llm_provider" value="anthropic" id="prov-anthropic" onchange="switchProvider('anthropic')">
+                                    <span>Anthropic</span>
+                                </label>
                             </div>
                         </div>
 
@@ -1020,6 +1024,19 @@
                             </div>
                             <button type="button" class="btn btn-secondary" onclick="loadOpenAIModels()" style="margin-bottom:8px">加载模型列表</button>
                             <div id="openai-models-status" style="font-size:12px;color:var(--text-muted);margin-bottom:8px"></div>
+                        </div>
+
+                        <div id="anthropic-config" style="display:none">
+                            <div class="form-group">
+                                <label>API Base URL</label>
+                                <input type="text" id="cfg-anthropic_api_base" placeholder="https://api.anthropic.com" value="https://api.anthropic.com">
+                            </div>
+                            <div class="form-group">
+                                <label>API Key</label>
+                                <input type="password" id="cfg-anthropic_api_key" placeholder="sk-ant-...">
+                            </div>
+                            <button type="button" class="btn btn-secondary" onclick="loadAnthropicModels()" style="margin-bottom:8px">加载模型列表</button>
+                            <div id="anthropic-models-status" style="font-size:12px;color:var(--text-muted);margin-bottom:8px"></div>
                         </div>
 
                         <div class="form-group">
@@ -1753,12 +1770,19 @@
         async function switchProvider(provider) {
             document.getElementById('ollama-config').style.display = provider === 'ollama' ? 'block' : 'none';
             document.getElementById('openai-config').style.display = provider === 'openai' ? 'block' : 'none';
+            document.getElementById('anthropic-config').style.display = provider === 'anthropic' ? 'block' : 'none';
             const select = document.getElementById('cfg-llm_model');
             select.options.length = 0;
             const opt = document.createElement('option');
             opt.value = '';
-            opt.textContent = provider === 'ollama' ? '-- 加载中 --' : '-- 请加载模型 --';
-            select.appendChild(opt);
+            if (provider === 'ollama') {
+                opt.textContent = '-- 加载中 --';
+                select.appendChild(opt);
+                await loadOllamaModels();
+            } else {
+                opt.textContent = '-- 请加载模型 --';
+                select.appendChild(opt);
+            }
         }
 
         async function loadOllamaModels(savedModel) {
@@ -1819,6 +1843,45 @@
             }
         }
 
+        async function loadAnthropicModels() {
+            const base = document.getElementById('cfg-anthropic_api_base').value || 'https://api.anthropic.com';
+            const key = document.getElementById('cfg-anthropic_api_key').value;
+            const statusEl = document.getElementById('anthropic-models-status');
+            if (!key) {
+                toast('请先填写 API Key', 'error');
+                return;
+            }
+            if (statusEl) statusEl.textContent = '加载中...';
+            try {
+                const res = await fetch(API + '/chat/models?' + new URLSearchParams({
+                    anthropic_base: base,
+                    anthropic_key: key,
+                }));
+                const data = await res.json();
+                const select = document.getElementById('cfg-llm_model');
+                select.options.length = 0;
+                if (!data.models || data.models.length === 0) {
+                    const opt = document.createElement('option');
+                    opt.value = '';
+                    opt.textContent = '-- 未找到模型，请检查 API Key --';
+                    select.appendChild(opt);
+                    if (statusEl) statusEl.textContent = '模型列表为空，请检查 API Key 是否正确';
+                    return;
+                }
+                data.models.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.id || m.name;
+                    opt.textContent = m.id || m.name;
+                    select.appendChild(opt);
+                });
+                if (statusEl) statusEl.textContent = `已加载 ${data.models.length} 个模型`;
+                toast(`模型列表加载成功 (${data.models.length}个)`, 'success');
+            } catch (e) {
+                if (statusEl) statusEl.textContent = '加载失败: ' + e.message;
+                toast('加载模型列表失败: ' + e.message, 'error');
+            }
+        }
+
         // Settings
         async function loadSettings() {
             try {
@@ -1838,11 +1901,22 @@
                 document.getElementById('cfg-openai_api_base').value = settingsData.openai_api_base || '';
                 document.getElementById('cfg-openai_api_key').value = settingsData.openai_api_key || '';
                 document.getElementById('cfg-openai_api_models_url').value = settingsData.openai_api_models_url || '';
+                document.getElementById('cfg-anthropic_api_base').value = settingsData.anthropic_api_base || 'https://api.anthropic.com';
+                document.getElementById('cfg-anthropic_api_key').value = settingsData.anthropic_api_key || '';
 
                 // Model - load based on provider
                 const savedModel = settingsData.llm_model || '';
                 if (provider === 'ollama') {
                     await loadOllamaModels(savedModel);
+                } else if (provider === 'anthropic') {
+                    if (savedModel) {
+                        const select = document.getElementById('cfg-llm_model');
+                        select.options.length = 0;
+                        const opt = document.createElement('option');
+                        opt.value = savedModel;
+                        opt.textContent = savedModel;
+                        select.appendChild(opt);
+                    }
                 } else {
                     if (savedModel) {
                         const select = document.getElementById('cfg-llm_model');
@@ -1908,6 +1982,11 @@
                 if (ok) config.openai_api_key = ok;
                 const mu = v('cfg-openai_api_models_url');
                 if (mu) config.openai_api_models_url = mu;
+            } else if (provider === 'anthropic') {
+                const ab = v('cfg-anthropic_api_base');
+                if (ab) config.anthropic_api_base = ab;
+                const ak = v('cfg-anthropic_api_key');
+                if (ak) config.anthropic_api_key = ak;
             } else {
                 const lb = v('cfg-ollama_base');
                 if (lb) config.ollama_base = lb;

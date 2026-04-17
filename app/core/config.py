@@ -17,10 +17,12 @@ class Settings(BaseSettings):
     LLM_MODEL: str = "qwen2.5:7b"
 
     # LLM Provider
-    LLMProvider: str = "ollama"          # ollama | openai
+    LLMProvider: str = "ollama"          # ollama | openai | anthropic
     OpenAI_API_Base: str = "https://api.openai.com/v1"
     OpenAI_API_Key: str = ""
     OpenAI_API_Models_URL: str = ""  # 默认空，使用 {base}/v1/models
+    Anthropic_API_Base: str = "https://api.anthropic.com"
+    Anthropic_API_Key: str = ""
 
     # Storage
     UPLOAD_DIR: str = "./uploads"
