@@ -987,77 +987,20 @@
                     <div class="settings-card">
                         <h3><span class="icon">🤖</span> 模型配置</h3>
                         <div class="form-group">
-                            <label>模型来源</label>
-                            <div class="provider-tabs">
-                                <label class="provider-tab">
-                                    <input type="radio" name="llm_provider" value="ollama" id="prov-ollama" onchange="switchProvider('ollama')">
-                                    <span>Ollama (本地)</span>
-                                </label>
-                                <label class="provider-tab">
-                                    <input type="radio" name="llm_provider" value="openai" id="prov-openai" onchange="switchProvider('openai')">
-                                    <span>OpenAI 兼容</span>
-                                </label>
-                                <label class="provider-tab">
-                                    <input type="radio" name="llm_provider" value="anthropic" id="prov-anthropic" onchange="switchProvider('anthropic')">
-                                    <span>Anthropic</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div id="ollama-config" class="form-group">
                             <label>Ollama 地址</label>
                             <input type="text" id="cfg-ollama_base" value="http://localhost:11434" placeholder="http://localhost:11434">
                         </div>
-
-                        <div id="openai-config" style="display:none">
-                            <div class="form-group">
-                                <label>API Base URL</label>
-                                <input type="text" id="cfg-openai_api_base" placeholder="https://api.openai.com/v1">
-                            </div>
-                            <div class="form-group">
-                                <label>API Key</label>
-                                <input type="password" id="cfg-openai_api_key" placeholder="sk-...">
-                            </div>
-                            <div class="form-group">
-                                <label>模型列表端点（留空则自动尝试 /v1/models）</label>
-                                <input type="text" id="cfg-openai_api_models_url" placeholder="如 /v1/models 或直接输入完整URL">
-                            </div>
-                            <button type="button" class="btn btn-secondary" onclick="loadOpenAIModels()" style="margin-bottom:8px">加载模型列表</button>
-                            <div id="openai-models-status" style="font-size:12px;color:var(--text-muted);margin-bottom:8px"></div>
-                            <div class="form-group" style="margin-top:8px">
-                                <label>或手动输入模型名称</label>
-                                <input type="text" id="cfg-openai_manual_model" placeholder="如 gpt-4o、claude-3-5-sonnet">
-                            </div>
-                        </div>
-
-                        <div id="anthropic-config" style="display:none">
-                            <div class="form-group">
-                                <label>API Base URL</label>
-                                <input type="text" id="cfg-anthropic_api_base" placeholder="https://api.anthropic.com" value="https://api.anthropic.com">
-                            </div>
-                            <div class="form-group">
-                                <label>API Key</label>
-                                <input type="password" id="cfg-anthropic_api_key" placeholder="sk-ant-...">
-                            </div>
-                            <button type="button" class="btn btn-secondary" onclick="loadAnthropicModels()" style="margin-bottom:8px">加载模型列表</button>
-                            <div id="anthropic-models-status" style="font-size:12px;color:var(--text-muted);margin-bottom:8px"></div>
-                            <div class="form-group" style="margin-top:8px">
-                                <label>或手动输入模型名称</label>
-                                <input type="text" id="cfg-anthropic_manual_model" placeholder="如 claude-3-5-sonnet">
-                            </div>
-                        </div>
-
                         <div class="form-group">
                             <label>LLM 模型</label>
                             <select id="cfg-llm_model">
-                                <option value="">-- 先选择来源 --</option>
+                                <option value="">-- 加载中 --</option>
                             </select>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group">
                                 <label>温度 (temperature)</label>
-                                <input type="number" id="cfg-temperature" value="0.7" step="0.1" min="0" max="2">
+                                <input type="number" id="cfg-temperature" value="0.9" step="0.1" min="0" max="2">
                             </div>
                             <div class="form-group">
                                 <label>最大生成长度</label>
@@ -1098,7 +1041,7 @@
                         </div>
                         <div class="form-group">
                             <label>最大上下文字符数</label>
-                            <input type="number" id="cfg-max_tree_context_chars" value="20000" min="1000" max="100000">
+                            <input type="number" id="cfg-max_tree_context_chars" value="15000" min="1000" max="100000">
                         </div>
                         <p class="settings-hint">⚠️ 参数变更仅影响新上传或重新处理的文档</p>
                     </div>
@@ -1412,12 +1355,14 @@
 
         function toggleSelectAll() {
             const selectAll = document.getElementById('select-all');
+            const checkboxes = document.querySelectorAll('#doc-list input[type="checkbox"]');
             if (selectAll.checked) {
                 filteredDocs.forEach(doc => selectedIds.add(doc.id));
+                checkboxes.forEach(cb => cb.checked = true);
             } else {
                 selectedIds.clear();
+                checkboxes.forEach(cb => cb.checked = false);
             }
-            syncSelectAll();
             updateBatchBar();
         }
 
@@ -1775,24 +1720,6 @@
         }
 
         // Provider switching
-        async function switchProvider(provider) {
-            document.getElementById('ollama-config').style.display = provider === 'ollama' ? 'block' : 'none';
-            document.getElementById('openai-config').style.display = provider === 'openai' ? 'block' : 'none';
-            document.getElementById('anthropic-config').style.display = provider === 'anthropic' ? 'block' : 'none';
-            const select = document.getElementById('cfg-llm_model');
-            select.options.length = 0;
-            const opt = document.createElement('option');
-            opt.value = '';
-            if (provider === 'ollama') {
-                opt.textContent = '-- 加载中 --';
-                select.appendChild(opt);
-                await loadOllamaModels();
-            } else {
-                opt.textContent = '-- 请加载模型 --';
-                select.appendChild(opt);
-            }
-        }
-
         async function loadOllamaModels(savedModel) {
             const base = document.getElementById('cfg-ollama_base').value || 'http://localhost:11434';
             try {
@@ -1812,77 +1739,6 @@
             }
         }
 
-        async function loadOpenAIModels() {
-            const base = document.getElementById('cfg-openai_api_base').value;
-            const key = document.getElementById('cfg-openai_api_key').value;
-            const modelsUrl = document.getElementById('cfg-openai_api_models_url').value;
-            const statusEl = document.getElementById('openai-models-status');
-            if (!base || !key) {
-                toast('请先填写 API Base URL 和 API Key', 'error');
-                return;
-            }
-            if (statusEl) statusEl.textContent = '加载中...';
-            try {
-                const params = { openai_base: base, openai_key: key };
-                if (modelsUrl) params.models_url = modelsUrl;
-                const res = await fetch(API + '/chat/models?' + new URLSearchParams(params));
-                const data = await res.json();
-                const select = document.getElementById('cfg-llm_model');
-                select.options.length = 0;
-                if (!data.models || data.models.length === 0) {
-                    if (statusEl) statusEl.textContent = '自动加载失败，请在下方手动输入模型名称';
-                    toast('模型列表为空，请手动输入', 'warn');
-                    return;
-                }
-                data.models.forEach(m => {
-                    const opt = document.createElement('option');
-                    opt.value = m.id || m.name;
-                    opt.textContent = m.id || m.name;
-                    select.appendChild(opt);
-                });
-                if (statusEl) statusEl.textContent = `已加载 ${data.models.length} 个模型`;
-                toast(`模型列表加载成功 (${data.models.length}个)`, 'success');
-            } catch (e) {
-                if (statusEl) statusEl.textContent = '加载失败，请手动输入模型名称';
-                toast('加载模型列表失败: ' + e.message, 'warn');
-            }
-        }
-
-        async function loadAnthropicModels() {
-            const base = document.getElementById('cfg-anthropic_api_base').value || 'https://api.anthropic.com';
-            const key = document.getElementById('cfg-anthropic_api_key').value;
-            const statusEl = document.getElementById('anthropic-models-status');
-            if (!key) {
-                toast('请先填写 API Key', 'error');
-                return;
-            }
-            if (statusEl) statusEl.textContent = '加载中...';
-            try {
-                const res = await fetch(API + '/chat/models?' + new URLSearchParams({
-                    anthropic_base: base,
-                    anthropic_key: key,
-                }));
-                const data = await res.json();
-                const select = document.getElementById('cfg-llm_model');
-                select.options.length = 0;
-                if (!data.models || data.models.length === 0) {
-                    if (statusEl) statusEl.textContent = '自动加载失败，请在下方手动输入模型名称';
-                    toast('模型列表为空，请手动输入', 'warn');
-                    return;
-                }
-                data.models.forEach(m => {
-                    const opt = document.createElement('option');
-                    opt.value = m.id || m.name;
-                    opt.textContent = m.id || m.name;
-                    select.appendChild(opt);
-                });
-                if (statusEl) statusEl.textContent = `已加载 ${data.models.length} 个模型`;
-                toast(`模型列表加载成功 (${data.models.length}个)`, 'success');
-            } catch (e) {
-                if (statusEl) statusEl.textContent = '加载失败，请手动输入模型名称';
-                toast('加载模型列表失败: ' + e.message, 'warn');
-            }
-        }
 
         // Settings
         async function loadSettings() {
@@ -1891,54 +1747,19 @@
                 if (!response.ok) throw new Error('Failed to load settings');
                 settingsData = await response.json();
 
-                // Provider
-                const provider = settingsData.llm_provider || 'ollama';
-                document.querySelectorAll('input[name="llm_provider"]').forEach(r => {
-                    r.checked = r.value === provider;
-                });
-                switchProvider(provider);
-
-                // API configs
                 document.getElementById('cfg-ollama_base').value = settingsData.ollama_base || 'http://localhost:11434';
-                document.getElementById('cfg-openai_api_base').value = settingsData.openai_api_base || '';
-                document.getElementById('cfg-openai_api_key').value = settingsData.openai_api_key || '';
-                document.getElementById('cfg-openai_api_models_url').value = settingsData.openai_api_models_url || '';
-                document.getElementById('cfg-anthropic_api_base').value = settingsData.anthropic_api_base || 'https://api.anthropic.com';
-                document.getElementById('cfg-anthropic_api_key').value = settingsData.anthropic_api_key || '';
 
-                // Model - load based on provider
                 const savedModel = settingsData.llm_model || '';
-                if (provider === 'ollama') {
-                    await loadOllamaModels(savedModel);
-                } else if (provider === 'anthropic') {
-                    if (savedModel) {
-                        const select = document.getElementById('cfg-llm_model');
-                        select.options.length = 0;
-                        const opt = document.createElement('option');
-                        opt.value = savedModel;
-                        opt.textContent = savedModel;
-                        select.appendChild(opt);
-                    }
-                } else {
-                    if (savedModel) {
-                        const select = document.getElementById('cfg-llm_model');
-                        select.options.length = 0;
-                        const opt = document.createElement('option');
-                        opt.value = savedModel;
-                        opt.textContent = savedModel;
-                        select.appendChild(opt);
-                        select.value = savedModel;
-                    }
-                }
+                await loadOllamaModels(savedModel);
 
-                document.getElementById('cfg-temperature').value = settingsData.temperature ?? 0.7;
+                document.getElementById('cfg-temperature').value = settingsData.temperature ?? 0.9;
                 document.getElementById('cfg-max_tokens').value = settingsData.max_tokens || 2048;
                 document.getElementById('cfg-system_prompt').value = settingsData.system_prompt || '';
                 document.getElementById('cfg-search_top_k').value = settingsData.search_top_k || 5;
                 document.getElementById('cfg-search_max_depth').value = settingsData.search_max_depth || 4;
                 document.getElementById('cfg-tree_max_depth').value = settingsData.tree_max_depth || 5;
                 document.getElementById('cfg-tree_max_children').value = settingsData.tree_max_children || 10;
-                document.getElementById('cfg-max_tree_context_chars').value = settingsData.max_tree_context_chars || 20000;
+                document.getElementById('cfg-max_tree_context_chars').value = settingsData.max_tree_context_chars ?? 15000;
             } catch (error) {
                 toast('加载设置失败: ' + error.message, 'error');
             }
@@ -1948,17 +1769,11 @@
             const config = {};
             const v = (id) => document.getElementById(id).value;
 
-            // llm_model: prefer manual input, fall back to select
-            const provider = document.querySelector('input[name="llm_provider"]:checked')?.value || 'ollama';
-            let llmModel = v('cfg-llm_model');
-            if (provider === 'openai') {
-                const manual = v('cfg-openai_manual_model');
-                if (manual) llmModel = manual;
-            } else if (provider === 'anthropic') {
-                const manual = v('cfg-anthropic_manual_model');
-                if (manual) llmModel = manual;
-            }
+            const llmModel = v('cfg-llm_model');
             if (llmModel) config.llm_model = llmModel;
+
+            const lb = v('cfg-ollama_base');
+            if (lb) config.ollama_base = lb;
 
             const temp = parseFloat(v('cfg-temperature'));
             if (!isNaN(temp)) config.temperature = temp;
@@ -1983,24 +1798,6 @@
 
             const mc = parseInt(v('cfg-max_tree_context_chars'));
             if (!isNaN(mc)) config.max_tree_context_chars = mc;
-
-            config.llm_provider = provider;
-            if (provider === 'openai') {
-                const ob = v('cfg-openai_api_base');
-                if (ob) config.openai_api_base = ob;
-                const ok = v('cfg-openai_api_key');
-                if (ok) config.openai_api_key = ok;
-                const mu = v('cfg-openai_api_models_url');
-                if (mu) config.openai_api_models_url = mu;
-            } else if (provider === 'anthropic') {
-                const ab = v('cfg-anthropic_api_base');
-                if (ab) config.anthropic_api_base = ab;
-                const ak = v('cfg-anthropic_api_key');
-                if (ak) config.anthropic_api_key = ak;
-            } else {
-                const lb = v('cfg-ollama_base');
-                if (lb) config.ollama_base = lb;
-            }
 
             try {
                 const response = await authFetch(API + '/config', {

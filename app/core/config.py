@@ -16,21 +16,13 @@ class Settings(BaseSettings):
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     LLM_MODEL: str = "qwen2.5:7b"
 
-    # LLM Provider
-    LLMProvider: str = "ollama"          # ollama | openai | anthropic
-    OpenAI_API_Base: str = "https://api.openai.com/v1"
-    OpenAI_API_Key: str = ""
-    OpenAI_API_Models_URL: str = ""  # 默认空，使用 {base}/v1/models
-    Anthropic_API_Base: str = "https://api.anthropic.com"
-    Anthropic_API_Key: str = ""
-
     # Storage
     UPLOAD_DIR: str = "./uploads"
 
     # PageIndex tree generation
     TREE_MAX_DEPTH: int = 5
     TREE_MAX_CHILDREN: int = 10
-    MAX_TREE_CONTEXT_CHARS: int = 20000
+    MAX_TREE_CONTEXT_CHARS: int = 15000
 
     # PageIndex tree search
     SEARCH_MAX_DEPTH: int = 4

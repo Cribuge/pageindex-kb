@@ -177,50 +177,7 @@ async def delete_session(session_id: uuid.UUID, db: Session = Depends(get_db)):
 
 
 @router.get("/models")
-async def list_models(
-    openai_base: str = None,
-    openai_key: str = None,
-    models_url: str = None,
-    anthropic_base: str = None,
-    anthropic_key: str = None,
-):
-    """List available models.
-
-    Supports OpenAI-compatible (via openai_base/key) and Anthropic (via anthropic_base/key).
-    Falls back to current provider settings if no overrides provided.
-    """
-    import logging
-    logger = logging.getLogger(__name__)
-
-    if anthropic_base and anthropic_key:
-        original_provider = llm_service.provider
-        original_base = llm_service.anthropic_base
-        original_key = llm_service.anthropic_key
-        llm_service.provider = "anthropic"
-        llm_service.anthropic_base = anthropic_base
-        llm_service.anthropic_key = anthropic_key
-        logger.info(f"[list_models] Using Anthropic: base={anthropic_base}")
-        models = await llm_service.list_models()
-        logger.info(f"[list_models] Anthropic returned {len(models)} models: {[m['id'] for m in models]}")
-        llm_service.provider = original_provider
-        llm_service.anthropic_base = original_base
-        llm_service.anthropic_key = original_key
-        return {"models": models}
-
-    if openai_base and openai_key:
-        original_provider = llm_service.provider
-        original_base = llm_service.openai_base
-        original_key = llm_service.openai_key
-        llm_service.provider = "openai"
-        llm_service.openai_base = openai_base
-        llm_service.openai_key = openai_key
-        logger.info(f"[list_models] Using OpenAI: base={openai_base}, models_url={models_url}")
-        models = await llm_service.list_models(models_url)
-        logger.info(f"[list_models] OpenAI returned {len(models)} models: {[m['id'] for m in models]}")
-        llm_service.provider = original_provider
-        llm_service.openai_base = original_base
-        llm_service.openai_key = original_key
-        return {"models": models}
-
+async def list_models():
+    """List available Ollama models."""
     models = await llm_service.list_models()
     return {"models": models}

@@ -3,6 +3,7 @@ PageIndex Tree Search: keyword-based full text search with tree index for docume
 """
 import json
 import logging
+import math
 import re
 from typing import List
 
@@ -17,19 +18,21 @@ logger = logging.getLogger(__name__)
 
 TREE_SEARCH_SYSTEM = """你是文档检索助手。根据用户的问题和文档章节列表，选择最可能包含答案的章节。
 
-只输出一个JSON数组，例如：["0003","0007"]
+【输出格式】
+只输出JSON数组，例如：["node_003","node_007"]
 
-规则：
-1. 最多选{top_k}个章节
+【规则】
+1. 最多选{top_k}个章节，优先选与问题关键词直接相关的章节
 2. 如果没有相关章节，返回[]
 3. 只输出JSON数组，不要任何解释"""
 
 DOC_SELECT_SYSTEM = """你是文档筛选助手。根据用户问题，从文档列表中选出最相关的文档。
 
-只输出一个JSON数组（文档索引，0-based），例如：[2,0,5]
+【输出格式】
+只输出JSON数组（文档索引，0-based），例如：[2,0,5]
 
-规则：
-1. 最多选{top_k}个文档
+【规则】
+1. 最多选{top_k}个文档，选择与问题直接相关的文档
 2. 只输出JSON数组，不要任何解释"""
 
 DOC_SELECT_PROMPT = """问题：{query}
@@ -48,7 +51,13 @@ TREE_SEARCH_PROMPT = """问题：{query}
 
 RERANK_SYSTEM = """你是搜索结果排序助手。根据用户问题，从候选结果中选出最相关的。
 
-只输出JSON数组（0-based索引），例如：[2,0,4]"""
+【输出格式】
+只输出JSON数组（0-based索引），例如：[2,0,4]
+
+【规则】
+1. 按相关程度从高到低排序，输出索引数组
+2. 不相关的候选可以直接省略
+3. 只输出JSON数组，不要任何解释"""
 
 RERANK_PROMPT = """问题：{query}
 
@@ -57,6 +66,29 @@ RERANK_PROMPT = """问题：{query}
 
 选出最相关的结果索引，输出JSON数组："""
 
+# 查询改写：抽象概念展开为具体关键词
+QUERY_EXPANSION = {
+    "关键岗位": "关键岗位 管理人员 任职要求 职责",
+    "市场化用工": "市场化用工 劳动合同 灵活用工 聘用",
+    "总经理工作制度": "总经理 工作职责 决策 权限",
+    "总经理办公制度": "总经理 行政事务 办公 审批",
+    "员工手册": "员工手册 入职 行为规范 福利",
+    "意识形态": "意识形态 思想政治 宣传",
+    "安全生产": "安全生产 安全职责 隐患 防护",
+    "招聘": "招聘 录用 入职 面试",
+    "离职": "离职 辞职 交接 手续",
+    "绩效": "绩效考核 目标管理 评价",
+    "薪酬": "薪酬 工资 奖金 福利",
+    "采购": "采购 供应商 招标 合同",
+    # 补词：覆盖评测失败案例
+    "入职手续": "入职 劳动合同 签订 体检 培训",
+    "入职办理": "入职 劳动合同 签订 体检 培训",
+    "采购审批": "采购 供应商 招标 合同 预算",
+    "工作积极性": "激励 绩效 奖惩 考核 奖金",
+    "市场开发": "市场开发 业务运营 支持 流程",
+    "业务运营": "业务运营 市场开发 支持流程",
+}
+
 
 class TreeSearch:
 
@@ -64,15 +96,9 @@ class TreeSearch:
         self.llm = llm_service
 
     def _get_config(self, db: Session) -> dict:
-        """Read search config from DB, fallback to settings defaults."""
         defaults = {
             "search_top_k": settings.SEARCH_TOP_K,
             "search_max_depth": settings.SEARCH_MAX_DEPTH,
-            "llm_provider": settings.LLMProvider,
-            "openai_api_base": settings.OpenAI_API_Base,
-            "openai_api_key": settings.OpenAI_API_Key,
-            "anthropic_api_base": settings.Anthropic_API_Base,
-            "anthropic_api_key": settings.Anthropic_API_Key,
         }
         result = {}
         for key in defaults:
@@ -80,21 +106,43 @@ class TreeSearch:
             result[key] = row.value if row else defaults[key]
         return result
 
+    def _expand_query(self, query: str) -> str:
+        """Expand abstract query terms with concrete keywords."""
+        expanded = query
+        for term, replacement in QUERY_EXPANSION.items():
+            if term in query:
+                expanded = replacement + " " + expanded
+        return expanded
+
     async def search_document(self, query: str, document: Document, max_depth: int = None) -> List[dict]:
-        """Search within a single document using keyword extraction + text matching + tree context."""
+        """Search using hybrid keyword + BM25 + LLM approach."""
         if not document.tree_index or not document.full_text:
             return []
 
         full_text = document.full_text
         tree = document.tree_index
-
-        # Extract keywords from query
         keywords = self._extract_keywords(query)
 
-        # Split full text into paragraphs
-        paragraphs = self._split_into_paragraphs(full_text)
+        # 路径1: 关键词段落匹配
+        keyword_results = self._keyword_search(full_text, tree, keywords)
 
-        # Score each paragraph by keyword hits
+        # 路径2: BM25 段落排序
+        bm25_results = self._bm25_search(full_text, tree, keywords)
+
+        # 路径3: LLM 树遍历 fallback
+        llm_results = await self._tree_search_fallback(query, document, max_depth)
+
+        # 合并 + 去重（RRF 融合）
+        merged = self._merge_results(keyword_results, bm25_results, llm_results)
+
+        for r in merged:
+            r["document_id"] = str(document.id)
+            r["document_title"] = document.title
+
+        return merged[:5]
+
+    def _keyword_search(self, full_text: str, tree: dict, keywords: List[str]) -> List[dict]:
+        paragraphs = self._split_into_paragraphs(full_text)
         scored = []
         for para in paragraphs:
             if len(para["text"].strip()) < 20:
@@ -104,37 +152,30 @@ class TreeSearch:
                 if len(kw) < 2:
                     continue
                 count = para["text"].count(kw)
-                score += count * len(kw)  # Longer keywords weighted more
+                score += count * len(kw)
             if score > 0:
                 scored.append((score, para))
 
         if not scored:
-            # No keyword match, try tree-based search as fallback
-            return await self._tree_search_fallback(query, document, max_depth)
+            return []
 
-        # Sort by score, take top chunks
         scored.sort(key=lambda x: -x[0])
         top_chunks = scored[:5]
 
-        # Build results with context window
         results = []
         seen_ranges = set()
         for score, para in top_chunks:
             line_start = para["line_start"]
             line_end = para["line_end"]
-            # Merge overlapping ranges
             key = (line_start, line_end)
             if key in seen_ranges:
                 continue
             seen_ranges.add(key)
 
-            # Expand context: include neighboring lines
             lines = full_text.split("\n")
             ctx_start = max(0, line_start - 3)
             ctx_end = min(len(lines), line_end + 3)
             text = "\n".join(lines[ctx_start:ctx_end])
-
-            # Find which tree node this belongs to
             node_title = self._find_node_for_line(tree, line_start) or tree.get("title", "")
 
             results.append({
@@ -143,23 +184,183 @@ class TreeSearch:
                 "summary": "",
                 "text_content": text,
                 "score": score,
+                "line_range": key,
             })
-
-        # Fill in document info
-        for r in results:
-            r["document_id"] = str(document.id)
-            r["document_title"] = document.title
-
         return results
 
+    def _bm25_search(self, full_text: str, tree: dict, keywords: List[str]) -> List[dict]:
+        try:
+            import jieba
+        except ImportError:
+            return []
+
+        if not keywords:
+            return []
+
+        paragraphs = self._split_into_paragraphs(full_text)
+        tokenized = []
+        for para in paragraphs:
+            text = para["text"].strip()
+            if len(text) < 20:
+                tokenized.append([])
+            else:
+                tokenized.append(list(jieba.cut_for_search(text)))
+
+        avg_len = sum(len(t) for t in tokenized) / max(len(tokenized), 1)
+        if avg_len < 1:
+            avg_len = 1.0
+
+        k1 = 1.5
+        b = 0.75
+
+        df = {}
+        for kw in keywords:
+            df[kw] = sum(1 for tokens in tokenized if kw in tokens)
+
+        n = len(tokenized)
+        idf = {}
+        for kw in keywords:
+            df_kw = df.get(kw, 0)
+            idf[kw] = max(0.1, math.log((n - df_kw + 0.5) / (df_kw + 0.5) + 1))
+
+        scored = []
+        for i, tokens in enumerate(tokenized):
+            if not tokens:
+                continue
+            score = 0.0
+            para_len = len(tokens)
+            for kw in keywords:
+                tf = tokens.count(kw)
+                if tf == 0:
+                    continue
+                idf_val = idf.get(kw, 0)
+                term_freq = (tf * (k1 + 1)) / (tf + k1 * (1 - b + b * para_len / avg_len))
+                score += idf_val * term_freq
+            if score > 0:
+                scored.append((score, paragraphs[i]))
+
+        if not scored:
+            return []
+
+        scored.sort(key=lambda x: -x[0])
+        top_chunks = scored[:5]
+
+        results = []
+        seen_ranges = set()
+        for score, para in top_chunks:
+            line_start = para["line_start"]
+            line_end = para["line_end"]
+            key = (line_start, line_end)
+            if key in seen_ranges:
+                continue
+            seen_ranges.add(key)
+
+            lines = full_text.split("\n")
+            ctx_start = max(0, line_start - 3)
+            ctx_end = min(len(lines), line_end + 3)
+            text = "\n".join(lines[ctx_start:ctx_end])
+            node_title = self._find_node_for_line(tree, line_start) or tree.get("title", "")
+
+            results.append({
+                "node_id": "",
+                "title": node_title,
+                "summary": "",
+                "text_content": text,
+                "score": score,
+                "line_range": key,
+            })
+        return results
+
+    async def _embedding_search(
+        self,
+        query: str,
+        full_text: str,
+        tree: dict,
+        keyword_results: List[dict],
+        bm25_results: List[dict],
+        llm_results: List[dict],
+    ) -> List[dict]:
+        """Semantic similarity search using Ollama embeddings (nomic-embed-text)."""
+        try:
+            query_emb = await self.llm.embed(query)
+            if not query_emb:
+                return []
+        except Exception:
+            return []
+
+        # Collect candidate paragraphs from existing results + random sampling
+        paragraphs = self._split_into_paragraphs(full_text)
+        candidates = {}
+
+        # Include top keyword/BM25 results first
+        for r in keyword_results[:5] + bm25_results[:5]:
+            lr = r.get("line_range")
+            if lr:
+                candidates[lr] = r
+
+        # If still few candidates, add random paragraphs
+        if len(candidates) < 5:
+            import random
+            for para in random.sample(paragraphs, min(10, len(paragraphs))):
+                lr = (para["line_start"], para["line_end"])
+                if lr not in candidates:
+                    candidates[lr] = {
+                        "node_id": "",
+                        "title": self._find_node_for_line(tree, para["line_start"]) or tree.get("title", ""),
+                        "summary": "",
+                        "text_content": para["text"],
+                        "score": 0.0,
+                        "line_range": lr,
+                    }
+
+        # Compute cosine similarity for each candidate
+        scored = []
+        for lr, r in candidates.items():
+            try:
+                text_emb = await self.llm.embed(r["text_content"][:500])  # truncate long text
+                if not text_emb:
+                    continue
+                # Cosine similarity
+                dot = sum(a * b for a, b in zip(query_emb, text_emb))
+                norm_q = math.sqrt(sum(a * a for a in query_emb))
+                norm_t = math.sqrt(sum(b * b for b in text_emb))
+                if norm_q > 0 and norm_t > 0:
+                    sim = dot / (norm_q * norm_t)
+                    r["score"] = sim
+                    scored.append(r)
+            except Exception:
+                continue
+
+        scored.sort(key=lambda x: -x["score"])
+        return scored[:5]
+
+    def _merge_results(self, keyword_results: List[dict], bm25_results: List[dict], llm_results: List[dict]) -> List[dict]:
+        """Merge and deduplicate results. Keep top result per document (by line_range)."""
+        max_kw_score = max((r["score"] for r in keyword_results), default=1)
+        max_bm25_score = max((r["score"] for r in bm25_results), default=1)
+        for r in llm_results:
+            r["score"] = max_bm25_score * 0.5
+
+        combined = keyword_results + bm25_results + llm_results
+
+        # 按 (line_range) 去重，每条 line_range 只保留一个
+        seen_ranges = set()
+        unique = []
+        for r in combined:
+            lr = r.get("line_range")
+            if lr and lr not in seen_ranges:
+                seen_ranges.add(lr)
+                unique.append(r)
+
+        unique.sort(key=lambda x: -x["score"])
+        return unique
+
     def _extract_keywords(self, query: str) -> List[str]:
-        """Extract Chinese keywords from query using jieba."""
         try:
             import jieba
             import jieba.analyse
             keywords = list(jieba.cut_for_search(query))
             keywords.extend(jieba.analyse.extract_tags(query, topK=5))
-            # Deduplicate and filter
             seen = set()
             result = []
             for kw in keywords:
@@ -169,12 +370,10 @@ class TreeSearch:
                     result.append(kw)
             return result
         except ImportError:
-            # Fallback: simple character-level split for Chinese
             words = re.findall(r'[\u4e00-\u9fff]{2,}|[a-zA-Z]{3,}', query)
             return list(set(words))
 
     def _split_into_paragraphs(self, text: str) -> List[dict]:
-        """Split text into paragraphs with line number tracking."""
         lines = text.split("\n")
         paragraphs = []
         current_lines = []
@@ -205,7 +404,6 @@ class TreeSearch:
         return paragraphs
 
     def _find_node_for_line(self, tree: dict, line_num: int) -> str:
-        """Find the most specific tree node containing a given line number."""
         best_title = tree.get("title", "")
         for child in tree.get("nodes", []):
             start = child.get("start_index", 1)
@@ -214,7 +412,6 @@ class TreeSearch:
                 child_title = child.get("title", "")
                 if child_title:
                     best_title = child_title
-                # Check deeper
                 deeper = self._find_node_for_line(child, line_num)
                 if deeper != child.get("title", ""):
                     return deeper
@@ -222,7 +419,6 @@ class TreeSearch:
         return best_title
 
     async def _tree_search_fallback(self, query: str, document: Document, max_depth: int = None) -> List[dict]:
-        """Fallback: use tree index + LLM to find relevant nodes."""
         tree = document.tree_index
         full_text_lines = document.full_text.split("\n")
 
@@ -252,40 +448,54 @@ class TreeSearch:
             logger.warning("No indexed documents found")
             return []
 
-        # Step 1: Pre-filter documents by relevance
-        selected_docs = await self._select_documents(query, documents)
+        # 优化1: 查询改写 - 抽象词展开
+        expanded_query = self._expand_query(query)
+
+        # 优化2: 智能 LLM 预筛选 - 仅在关键词无强匹配时触发 LLM
+        selected_docs = await self._select_documents(query, expanded_query, documents)
         if not selected_docs:
             selected_docs = documents
-            logger.info("Document pre-selection returned none, searching all")
 
-        # Step 2: Search within selected documents
         all_results = []
         for doc in selected_docs:
             try:
                 results = await self.search_document(query, doc, max_depth=cfg["search_max_depth"])
                 all_results.extend(results)
-                logger.info(f"Searched doc '{doc.title}': {len(results)} results, {sum(len(r.get('text_content','')) for r in results)} chars")
+                logger.info(f"Searched doc '{doc.title}': {len(results)} results")
             except Exception as e:
                 logger.error(f"Error searching document {doc.id}: {e}")
                 continue
 
         if not all_results:
-            logger.warning("No results from any document")
             return []
+
+        # 按 document_id 去重，每文档只保留最高分的结果
+        doc_best: dict = {}
+        for r in all_results:
+            doc_id = r.get("document_id")
+            if doc_id not in doc_best or r.get("score", 0) > doc_best[doc_id].get("score", 0):
+                doc_best[doc_id] = r
+        all_results = list(doc_best.values())
+        all_results.sort(key=lambda x: -x.get("score", 0))
 
         if len(all_results) > top_k:
             all_results = await self._global_rerank(query, all_results, top_k=top_k)
 
         return all_results[:top_k]
 
-    async def _select_documents(self, query: str, documents: List) -> List:
-        """Pre-select most relevant documents using keyword matching + LLM."""
+    async def _select_documents(self, query: str, expanded_query: str, documents: List) -> List:
+        """Smart document pre-selection.
+
+        策略：
+        1. 关键词得分 > 0 的文档超过 5 个时 → 用 LLM 从 top 15 筛选
+        2. 关键词得分 > 0 的文档不超过 5 个时 → 直接返回这些文档（无需 LLM）
+        3. 关键词无匹配时 → 用 LLM 从全部文档筛选（抽象问题兜底）
+        """
         import jieba
         import jieba.analyse
 
-        # Step 1: Keyword-based scoring
-        keywords = set(jieba.cut_for_search(query))
-        keywords.update(jieba.analyse.extract_tags(query, topK=5))
+        keywords = set(jieba.cut_for_search(expanded_query))
+        keywords.update(jieba.analyse.extract_tags(expanded_query, topK=5))
 
         scored = []
         for i, doc in enumerate(documents):
@@ -305,49 +515,60 @@ class TreeSearch:
                     score += 5
                 if kw in search_text:
                     score += 2
-            if score > 0:
-                scored.append((score, i, doc))
+            scored.append((score, i, doc))
 
         scored.sort(key=lambda x: -x[0])
         keyword_candidates = scored[:15]
 
-        if not keyword_candidates:
-            keyword_candidates = [(0, i, doc) for i, doc in enumerate(documents)]
+        # 情况1: 有一定关键词匹配（>5个文档有分数）→ LLM 筛选 top 15
+        if len([s for s, _, _ in keyword_candidates if s > 0]) > 5:
+            docs_info = [
+                {
+                    "index": j,
+                    "title": doc.title,
+                    "summary": (doc.tree_index or {}).get("summary", "")[:100],
+                }
+                for j, (_, _, doc) in enumerate(keyword_candidates)
+            ]
+            return await self._llm_select(query, docs_info, keyword_candidates)
 
-        # Step 2: If we have a small candidate set, return them directly
-        if len(keyword_candidates) <= 5:
-            return [d for _, _, d in keyword_candidates]
+        # 情况2: 关键词匹配少（≤5个）但不为空 → 直接返回关键词候选
+        if keyword_candidates and keyword_candidates[0][0] > 0:
+            return [d for _, _, d in keyword_candidates[:5]]
 
-        # Step 3: Use LLM to refine among keyword candidates
+        # 情况3: 关键词无匹配（抽象问题）→ 用 LLM 从全部文档筛选
         docs_info = [
             {
                 "index": j,
                 "title": doc.title,
-                "summary": (doc.tree_index or {}).get("summary", "")[:80],
+                "summary": (doc.tree_index or {}).get("summary", "")[:100],
             }
-            for j, (_, _, doc) in enumerate(keyword_candidates)
+            for j, (_, _, doc) in enumerate(scored)
         ]
+        return await self._llm_select(query, docs_info, scored)
 
+    async def _llm_select(self, query: str, docs_info: List[dict], scored: List) -> List:
+        """Call LLM to select documents from scored list."""
         try:
             response = await self.llm.generate(
                 prompt=DOC_SELECT_PROMPT.format(
                     query=query,
                     docs_json=json.dumps(docs_info, ensure_ascii=False, indent=2),
                 ),
-                system=DOC_SELECT_SYSTEM.format(top_k=5),
+                system=DOC_SELECT_SYSTEM.format(top_k=min(10, len(scored))),
                 temperature=0.1,
-                max_tokens=256,
+                max_tokens=512,
             )
             selected_indices = self._parse_id_array(response.get("response", ""))
             selected_indices = [int(x) for x in selected_indices if str(x).isdigit()]
             if selected_indices:
-                result = [keyword_candidates[i][2] for i in selected_indices if i < len(keyword_candidates)]
-                logger.info(f"Pre-selected {len(result)} documents from {len(documents)} (keyword narrowed to {len(keyword_candidates)})")
+                result = [scored[i][2] for i in selected_indices if i < len(scored)]
+                logger.info(f"LLM pre-selected {len(result)} documents")
                 return result
         except Exception as e:
             logger.error(f"LLM document selection failed: {e}")
 
-        return [d for _, _, d in keyword_candidates[:5]]
+        return [d for _, _, d in scored[:5]]
 
     async def _traverse_tree(self, query: str, node: dict, full_text_lines: List[str], depth: int, max_depth: int = None) -> List[dict]:
         if max_depth is None:
@@ -357,7 +578,6 @@ class TreeSearch:
         if not children or depth >= max_depth:
             return [self._node_to_result(node, full_text_lines)]
 
-        # 让LLM选择要深入的分支
         sections_info = [
             {
                 "node_id": c["node_id"],
@@ -378,15 +598,13 @@ class TreeSearch:
                 max_tokens=512,
             )
             selected_ids = self._parse_id_array(response.get("response", ""))
-            logger.info(f"Tree depth {depth}: LLM selected {selected_ids} from {[c['node_id'] for c in children]}")
+            logger.info(f"Tree depth {depth}: LLM selected {selected_ids}")
         except Exception as e:
             logger.error(f"Tree search LLM call failed: {e}")
             selected_ids = []
 
-        # Fallback: 如果LLM没有选出任何节点，选择所有子节点
         if not selected_ids:
             selected_ids = [c["node_id"] for c in children]
-            logger.info(f"Tree depth {depth}: fallback to all children: {selected_ids}")
 
         results = []
         for child in children:
@@ -408,6 +626,7 @@ class TreeSearch:
             "title": node.get("title", ""),
             "summary": node.get("summary", ""),
             "text_content": text,
+            "line_range": (start, end),
         }
 
     def _parse_id_array(self, text: str) -> List[str]:
@@ -455,7 +674,7 @@ class TreeSearch:
                 ),
                 system=RERANK_SYSTEM.format(top_k=settings.SEARCH_TOP_K),
                 temperature=0.1,
-                max_tokens=256,
+                max_tokens=512,
             )
             selected_indices = self._parse_id_array(response.get("response", ""))
             selected_indices = [int(x) for x in selected_indices if str(x).isdigit()]

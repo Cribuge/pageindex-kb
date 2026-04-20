@@ -34,14 +34,9 @@ class RAGService:
 
         defaults = {
             "llm_model": settings.LLM_MODEL,
-            "temperature": 0.7,
+            "temperature": 0.9,
             "max_tokens": 2048,
             "system_prompt": DEFAULT_SYSTEM_PROMPT,
-            "llm_provider": settings.LLMProvider,
-            "openai_api_base": settings.OpenAI_API_Base,
-            "openai_api_key": settings.OpenAI_API_Key,
-            "anthropic_api_base": settings.Anthropic_API_Base,
-            "anthropic_api_key": settings.Anthropic_API_Key,
         }
 
         result = {}

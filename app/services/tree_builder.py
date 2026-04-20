@@ -99,6 +99,15 @@ class TreeBuilder:
                 tree_json = self._parse_json_response(raw)
                 if tree_json and "title" in tree_json:
                     self._reassign_node_ids(tree_json)
+                    # Validate summaries are non-empty
+                    empty_summaries = self._collect_empty_summaries(tree_json)
+                    if empty_summaries:
+                        logger.warning(f"Tree has {len(empty_summaries)} empty summaries on attempt {attempt+1}, retrying")
+                        if attempt < 2:
+                            text = text[:int(len(text) * 0.8)]
+                            numbered = self._number_lines(text)
+                            prompt = TREE_GENERATION_PROMPT.format(numbered_text=numbered)
+                            continue
                     logger.info(f"Tree generated successfully: {self.count_nodes(tree_json)} nodes")
                     return tree_json
                 elif tree_json:
@@ -124,7 +133,7 @@ class TreeBuilder:
         """Split text into segments, build sub-trees, merge."""
         if max_context_chars is None:
             max_context_chars = settings.MAX_TREE_CONTEXT_CHARS
-        segments = self._split_text(text, chunk_size=max_context_chars, overlap=2000)
+        segments = self._split_text(text, chunk_size=max_context_chars, overlap=1000)
 
         sub_trees = []
         line_offset = 0
@@ -420,6 +429,15 @@ class TreeBuilder:
         for child in tree.get("nodes", []):
             count += self.count_nodes(child)
         return count
+
+    def _collect_empty_summaries(self, tree: dict) -> List[dict]:
+        """Return list of nodes with empty summaries."""
+        empty = []
+        if not tree.get("summary", "").strip():
+            empty.append(tree)
+        for child in tree.get("nodes", []):
+            empty.extend(self._collect_empty_summaries(child))
+        return empty
 
 
 tree_builder = TreeBuilder()
